@@ -7,8 +7,8 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>/Users/shenshen/code/projects/sitstraight/start_posture_detection.sh</string>
+        <string>/usr/bin/python3</string>
+        <string>/Users/shenshen/code/projects/sitstraight/monitor_detector.py</string>
     </array>
     
     <key>RunAtLoad</key>
@@ -18,10 +18,10 @@
     <true/>
     
     <key>StandardOutPath</key>
-    <string>/Users/shenshen/code/projects/sitstraight/posture_detection_stdout.log</string>
+    <string>/Users/shenshen/code/projects/sitstraight/monitor_detector_stdout.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/shenshen/code/projects/sitstraight/posture_detection_stderr.log</string>
+    <string>/Users/shenshen/code/projects/sitstraight/monitor_detector_stderr.log</string>
     
     <key>WorkingDirectory</key>
     <string>/Users/shenshen/code/projects/sitstraight</string>
