@@ -201,6 +201,8 @@ Feel free to submit issues, feature requests, or pull requests to improve the ap
 
 ## Acknowledgments
 
+- **ClaudeCode**: Anthropic's AI coding assistant
 - **MediaPipe**: Google's pose detection technology
 - **OpenCV**: Computer vision library
-- **pyttsx3**: Text-to-speech functionality 
+- **pyttsx3**: Text-to-speech functionality
+ 
