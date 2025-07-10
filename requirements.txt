@@ -1,3 +1,7 @@
+# Python version requirement
+# Requires Python 3.8-3.11 (MediaPipe compatibility)
+# Tested with Python 3.10.18
+
 # Core dependencies for Python 3.10
 opencv-python>=4.8.0
 mediapipe>=0.10.0
