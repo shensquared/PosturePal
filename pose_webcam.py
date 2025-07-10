@@ -273,6 +273,80 @@ def run_calibration_mode(cam_index):
     cap.release()
     cv2.destroyAllWindows()
 
+def draw_sitting_timer(image, elapsed_time, alerted):
+    """Draw a visual timelapse-style sitting timer on the image"""
+    # Convert elapsed time to hours, minutes, seconds
+    hours = int(elapsed_time // 3600)
+    minutes = int((elapsed_time % 3600) // 60)
+    seconds = int(elapsed_time % 60)
+    
+    # Format time string
+    if hours > 0:
+        time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    else:
+        time_str = f"{minutes:02d}:{seconds:02d}"
+    
+    # Get image dimensions
+    h, w = image.shape[:2]
+    
+    # Timer position (top-right corner)
+    timer_x = w - 200
+    timer_y = 50
+    
+    # Background rectangle for timer
+    bg_color = (0, 0, 0) if not alerted else (0, 0, 255)  # Red background if alerted
+    cv2.rectangle(image, (timer_x - 10, timer_y - 30), (timer_x + 190, timer_y + 10), bg_color, -1)
+    cv2.rectangle(image, (timer_x - 10, timer_y - 30), (timer_x + 190, timer_y + 10), (255, 255, 255), 2)
+    
+    # Timer text
+    text_color = (255, 255, 255) if not alerted else (255, 255, 255)
+    if elapsed_time == 0:
+        cv2.putText(image, "Sitting: PAUSED", (timer_x, timer_y), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (128, 128, 128), 2)
+    else:
+        cv2.putText(image, f"Sitting: {time_str}", (timer_x, timer_y), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2)
+    
+    # Progress bar (timelapse style)
+    bar_width = 180
+    bar_height = 8
+    bar_x = timer_x
+    bar_y = timer_y + 20
+    
+    # Calculate progress (20 minutes = 100%)
+    progress = min(elapsed_time / (20 * 60), 1.0)  # 20 minutes max
+    filled_width = int(bar_width * progress)
+    
+    # Draw progress bar background
+    cv2.rectangle(image, (bar_x, bar_y), (bar_x + bar_width, bar_y + bar_height), (100, 100, 100), -1)
+    
+    # Draw filled progress
+    if progress > 0:
+        # Color gradient: green -> yellow -> red
+        if progress < 0.5:
+            # Green to yellow
+            color_ratio = progress / 0.5
+            color = (0, int(255 * (1 - color_ratio)), int(255 * color_ratio))
+        else:
+            # Yellow to red
+            color_ratio = (progress - 0.5) / 0.5
+            color = (0, int(255 * (1 - color_ratio)), 255)
+        
+        cv2.rectangle(image, (bar_x, bar_y), (bar_x + filled_width, bar_y + bar_height), color, -1)
+    
+    # Progress bar border
+    cv2.rectangle(image, (bar_x, bar_y), (bar_x + bar_width, bar_y + bar_height), (255, 255, 255), 1)
+    
+    # Add percentage text
+    percentage = int(progress * 100)
+    cv2.putText(image, f"{percentage}%", (bar_x + bar_width + 10, bar_y + bar_height + 5), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    
+    # Add warning text if sitting too long
+    if alerted:
+        cv2.putText(image, "TAKE A BREAK!", (timer_x, timer_y + 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
 def run_normal_mode(cam_index):
     """Run the normal pose detection mode with personalized thresholds"""
     print(f"Using camera index {cam_index}")
@@ -324,6 +398,9 @@ def run_normal_mode(cam_index):
     sitting_start_time = time.time()
     sitting_alerted = False
     SITTING_DURATION_THRESHOLD = 20 * 60  # 20 minutes in seconds
+    total_sitting_time = 0  # Track total actual sitting time
+    last_pose_time = None  # Track when pose was last detected
+    pose_detection_threshold = 3  # Seconds without pose detection to consider "not sitting"
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         while cap.isOpened():
@@ -337,6 +414,21 @@ def run_normal_mode(cam_index):
 
             # Make pose detection
             results = pose.process(image)
+            
+            # Update sitting timer based on pose detection
+            current_time = time.time()
+            if results.pose_landmarks:
+                # Pose detected - update last pose time
+                last_pose_time = current_time
+                # If this is the first pose detection after being away, resume timer
+                if sitting_start_time is None:
+                    sitting_start_time = current_time
+            else:
+                # No pose detected - check if we should pause timer
+                if last_pose_time and (current_time - last_pose_time) > pose_detection_threshold:
+                    # Been away for more than threshold - pause timer
+                    if sitting_start_time is not None:
+                        sitting_start_time = None  # Pause timer
 
             # Draw pose landmarks on the image
             image.flags.writeable = True
@@ -394,13 +486,19 @@ def run_normal_mode(cam_index):
                 bad_posture_start_time = None
                 bad_posture_alerted = False
 
-            # Check sitting timer (regardless of posture)
-            sitting_elapsed = time.time() - sitting_start_time
-            if sitting_elapsed >= SITTING_DURATION_THRESHOLD and not sitting_alerted:
-                play_ding()  # Play ding sound
-                engine.say("you've been sitting for 20min, take a rest")
-                engine.runAndWait()
-                sitting_alerted = True
+            # Check sitting timer (only when actually sitting)
+            if sitting_start_time is not None:
+                sitting_elapsed = time.time() - sitting_start_time
+                if sitting_elapsed >= SITTING_DURATION_THRESHOLD and not sitting_alerted:
+                    play_ding()  # Play ding sound
+                    engine.say("you've been sitting for 20min, take a rest")
+                    engine.runAndWait()
+                    sitting_alerted = True
+            else:
+                sitting_elapsed = 0  # Timer is paused
+
+            # Draw sitting timer display
+            draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
             # Show the image (landscape)
             cv2.imshow('Pose Detection', image)
