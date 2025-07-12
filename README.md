@@ -1,208 +1,152 @@
-# Posture Detection with MediaPipe
+# SitStraight - Posture Detection System
 
-A real-time posture detection application that uses MediaPipe Pose to monitor your sitting posture and provide alerts for bad posture and extended sitting periods.
+A smart posture detection system that helps you maintain good sitting posture and reminds you to take breaks.
 
 ## Features
 
-### 🎯 **Posture Detection**
-- **Slouching Detection**: Monitors shoulder position relative to hips
-- **Forward Head Detection**: Tracks head position relative to body
-- **Personalized Calibration**: Train the system with your own posture examples
+- **Real-time posture detection** using MediaPipe
+- **Personalized calibration** for your specific posture
+- **Configurable alerts** with adjustable timing
+- **Sitting timer** with visual progress bar
+- **Auto-start on login** (optional)
+- **Monitor detection** (optional - pauses when monitor is off)
+- **Continuous voice alerts** until posture improves
+- **Hidden dock icon** for clean desktop experience
 
-### 🔊 **Audio Alerts**
-- **Voice Alerts**: "Please sit up straight!" and "stand up"
-- **Ding Sounds**: Attention-grabbing system sounds
-- **Sitting Timer**: "You've been sitting for 20min, take a rest" after 20 minutes
+## Quick Start
 
-### 📊 **Visual Feedback**
-- **Skeleton Overlay**: Real-time pose landmarks with body part labels
-- **Measurement Display**: Shows current slouching and forward head measurements
-- **Status Indicators**: Visual alerts for bad posture detection
-
-### 🎛️ **Customization**
-- **Camera Selection**: Choose any connected camera
-- **Personalized Thresholds**: Calibrate based on your specific posture
-- **Adjustable Alerts**: Customize timing and sensitivity
-
-## Installation
-
-### Prerequisites
-- Python 3.7+
-- macOS (for system sounds and camera access)
-- Webcam or camera device
-
-### Install Dependencies
+### 1. Install Dependencies
 ```bash
-pip install opencv-python mediapipe pyttsx3 numpy
+# Create and activate virtual environment
+python3.10 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### Clone and Setup
+### 2. Calibrate Your Posture
 ```bash
-git clone <repository-url>
-cd standup
-python pose_webcam.py
-```
-
-## Usage
-
-### Basic Usage
-```bash
-# Run with default camera (index 0)
-python pose_webcam.py
-
-# Run with specific camera
-python pose_webcam.py --camera-index 2
-
-# Run calibration mode
 python pose_webcam.py --calibrate
 ```
+Follow the on-screen instructions to add good and bad posture examples.
 
-### Calibration Mode
-1. **Start Calibration**: `python pose_webcam.py --calibrate`
-2. **Add Examples**:
-   - Press `g` to add a **GOOD** posture example
-   - Press `b` to add a **BAD** posture example
-   - Collect at least 3 of each type
-3. **Calculate Thresholds**: Press `c` to compute personalized thresholds
-4. **Save Calibration**: Press `s` to save your settings
-5. **Quit**: Press `q` to exit
-
-### Normal Mode
-- **Real-time Monitoring**: Automatic posture detection
-- **Voice Alerts**: Audio feedback for bad posture
-- **Sitting Timer**: 20-minute break reminders
-- **Quit**: Press `q` to exit
-
-## Command Line Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--calibrate` | Run in calibration mode | False |
-| `--camera-index N` | Use camera index N | 0 |
-
-## Camera Setup
-
-### Finding Your Camera
-The script will automatically list available cameras on macOS:
-```
-Available camera devices (from ffmpeg):
-  Index 0: Studio Display Camera
-  Index 1: UGREEN Camera 4K
-  Index 2: iPhone Camera
-```
-
-### Camera Selection
+### 3. Start Posture Detection
 ```bash
-# Use Studio Display Camera (default)
 python pose_webcam.py
-
-# Use UGREEN Camera
-python pose_webcam.py --camera-index 1
-
-# Use iPhone Camera
-python pose_webcam.py --camera-index 2
 ```
 
-## Calibration Guide
+## Configuration Management
 
-### Why Calibrate?
-Personalized calibration improves accuracy by:
-- Accounting for your body proportions
-- Adapting to your sitting style
-- Reducing false positives/negatives
+### GUI Configuration (Recommended)
+For easy configuration through a graphical interface:
 
-### Calibration Process
-1. **Good Posture Examples**: Sit in your best posture, press `g`
-2. **Bad Posture Examples**: Slouch or lean forward, press `b`
-3. **Threshold Calculation**: System finds optimal detection boundaries
-4. **Save Settings**: Calibration data saved to `posture_calibration.json`
+```bash
+python config_gui.py
+```
 
-### Calibration Data
-- **File**: `posture_calibration.json`
-- **Contents**: Good/bad examples and personalized thresholds
-- **Location**: Same directory as the script
+The GUI provides:
+- ✅ **Real-time status** of all features
+- 🎛️ **Easy toggles** for auto-start and monitor detection
+- ⚙️ **Adjustable settings** with spinboxes and sliders
+- 🎮 **One-click controls** to start/stop posture detection
+- 📝 **Activity log** showing recent actions
+- 🔧 **Calibration launcher** for posture training
 
-## Alert System
+### Command Line Configuration
+For advanced users or scripting:
 
-### Posture Alerts
-- **Bad Posture Detected**: After 30 consecutive frames of bad posture
-- **Extended Bad Posture**: After 1 minute of continuous bad posture
-- **Sitting Timer**: After 20 minutes of total sitting time
+#### Show Current Configuration
+```bash
+python config_manager.py --show
+```
 
-### Audio Features
-- **Volume**: Maximum volume for clear alerts
-- **Speech Rate**: Optimized for clarity
-- **System Sounds**: macOS ding sounds for attention
+#### Toggle Auto-Start on Login
+```bash
+python config_manager.py --toggle-auto-start
+```
+
+#### Toggle Monitor Detection
+```bash
+python config_manager.py --toggle-monitor
+```
+
+#### Start/Stop Posture Detection
+```bash
+python config_manager.py --start
+python config_manager.py --stop
+```
+
+#### Adjust Alert Duration
+```bash
+python config_manager.py --alert-duration 3.0  # 3 seconds
+```
+
+#### Change Camera Index
+```bash
+python config_manager.py --camera 1  # Use camera index 1
+```
+
+## Configuration Options
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `auto_start_enabled` | `false` | Start automatically on login |
+| `monitor_detection_enabled` | `false` | Pause when monitor is off |
+| `alert_duration_seconds` | `5.0` | Time before first bad posture alert |
+| `camera_index` | `0` | Camera device to use |
+| `sitting_duration_threshold` | `1200` | Sitting time before break reminder (20 min) |
+| `bad_posture_duration_threshold` | `60` | Bad posture time before "stand up" alert |
+| `announcement_interval` | `5` | Seconds between continuous alerts |
+
+## Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+### Enable Auto-Start
+```bash
+./setup_autostart.sh
+```
+
+### Disable Auto-Start
+```bash
+launchctl unload ~/Library/LaunchAgents/com.sitstraight.posture.plist
+rm ~/Library/LaunchAgents/com.sitstraight.posture.plist
+```
 
 ## Troubleshooting
 
 ### Camera Issues
-```bash
-# Test available cameras
-python test_camera.py
+- Try different camera indices: `python pose_webcam.py --camera-index 1`
+- Check camera permissions in System Settings
 
-# Check camera permissions
-System Preferences > Security & Privacy > Camera
-```
-
-### Common Problems
-
-#### Camera Not Found
-- Ensure camera is connected and not in use by other applications
-- Check camera permissions in System Preferences
-- Try different camera indices
-
-#### No Audio Alerts
-- Check system volume
-- Ensure microphone permissions are granted
-- Verify pyttsx3 installation
-
-#### Poor Detection
-- Ensure good lighting
-- Position yourself 3-6 feet from camera
-- Use plain background
-- Run calibration mode for better accuracy
-
-#### Performance Issues
+### Performance Issues
+- Reduce frame rate by adjusting camera settings
 - Close other applications using the camera
-- Reduce camera resolution if needed
-- Ensure adequate lighting
 
-## Technical Details
-
-### Dependencies
-- **OpenCV**: Camera capture and image processing
-- **MediaPipe**: Pose detection and landmark tracking
-- **pyttsx3**: Text-to-speech for voice alerts
-- **NumPy**: Numerical computations
-
-### Pose Detection
-- **Model**: MediaPipe Pose (BlazePose)
-- **Landmarks**: 33 body points
-- **Confidence**: 0.5 minimum detection/tracking confidence
-
-### Measurements
-- **Slouching**: Shoulder-to-hip vertical distance
-- **Forward Head**: Head-to-hip horizontal distance
-- **Thresholds**: Personalized based on calibration data
+### Audio Issues
+- Check system volume and audio output settings
+- Ensure text-to-speech is enabled in macOS
 
 ## File Structure
+
 ```
-standup/
-├── pose_webcam.py          # Main application
-├── test_camera.py          # Camera testing utility
-├── posture_calibration.json # Calibration data (auto-generated)
-└── README.md              # This file
+sitstraight/
+├── pose_webcam.py              # Main posture detection script
+├── run_gui.py                  # GUI configuration interface
+├── config_manager.py           # Command-line configuration tool
+├── config.json                 # Configuration file
+├── posture_calibration.json    # Personalized calibration data
+├── simple_posture_launcher.sh  # Launcher script
+├── setup_autostart.sh          # Auto-start setup script
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
 ```
 
-## Contributing
+## Requirements
 
-Feel free to submit issues, feature requests, or pull requests to improve the application.
-
-## Acknowledgments
-
-- **ClaudeCode**: Anthropic's AI coding assistant
-- **MediaPipe**: Google's pose detection technology
-- **OpenCV**: Computer vision library
-- **pyttsx3**: Text-to-speech functionality
+- macOS 10.15 or later
+- Python 3.10
+- Webcam
+- Microphone (for voice alerts)
  

@@ -1,0 +1,94 @@
+{
+  "good_examples": [
+    {
+      "measurements": {
+        "slouching": -1.026964396238327,
+        "forward_head": 0.18396294116973877
+      },
+      "timestamp": 1752351538.118902
+    },
+    {
+      "measurements": {
+        "slouching": -1.0420904159545898,
+        "forward_head": 0.14718586206436157
+      },
+      "timestamp": 1752351543.265866
+    },
+    {
+      "measurements": {
+        "slouching": -0.9893896877765656,
+        "forward_head": 0.10740858316421509
+      },
+      "timestamp": 1752351545.5763898
+    },
+    {
+      "measurements": {
+        "slouching": -1.0090875923633575,
+        "forward_head": 0.10904735326766968
+      },
+      "timestamp": 1752351552.839298
+    },
+    {
+      "measurements": {
+        "slouching": -0.9642069339752197,
+        "forward_head": 0.14141082763671875
+      },
+      "timestamp": 1752351558.383028
+    },
+    {
+      "measurements": {
+        "slouching": -0.9096068143844604,
+        "forward_head": 0.1031445562839508
+      },
+      "timestamp": 1752351559.3381429
+    },
+    {
+      "measurements": {
+        "slouching": -0.9002050459384918,
+        "forward_head": 0.08208727836608887
+      },
+      "timestamp": 1752351560.294778
+    },
+    {
+      "measurements": {
+        "slouching": -0.9971914291381836,
+        "forward_head": 0.12186947464942932
+      },
+      "timestamp": 1752351563.693383
+    },
+    {
+      "measurements": {
+        "slouching": -1.0389322340488434,
+        "forward_head": 0.22613167762756348
+      },
+      "timestamp": 1752351648.4060328
+    }
+  ],
+  "bad_examples": [
+    {
+      "measurements": {
+        "slouching": -1.0863236486911774,
+        "forward_head": 0.1813337802886963
+      },
+      "timestamp": 1752351576.266651
+    },
+    {
+      "measurements": {
+        "slouching": -1.082183688879013,
+        "forward_head": 0.17940184473991394
+      },
+      "timestamp": 1752351578.212842
+    },
+    {
+      "measurements": {
+        "slouching": -1.0919647812843323,
+        "forward_head": 0.21761387586593628
+      },
+      "timestamp": 1752351640.552187
+    }
+  ],
+  "thresholds": {
+    "slouching_threshold": 0.15,
+    "forward_head_threshold": 0.15
+  }
+}

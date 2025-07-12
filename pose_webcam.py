@@ -10,6 +10,35 @@ import argparse
 import json
 import os
 
+# Configuration
+CONFIG_FILE = "config.json"
+DEFAULT_CONFIG = {
+    "auto_start_enabled": False,
+    "monitor_detection_enabled": False,
+    "alert_duration_seconds": 5.0,
+    "camera_index": 0,
+    "sitting_duration_threshold": 1200,
+    "bad_posture_duration_threshold": 60,
+    "announcement_interval": 5
+}
+
+def load_config():
+    """Load configuration from file"""
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                # Merge with defaults to ensure all keys exist
+                for key, value in DEFAULT_CONFIG.items():
+                    if key not in config:
+                        config[key] = value
+                return config
+        except Exception as e:
+            print(f"Error loading config: {e}")
+            return DEFAULT_CONFIG.copy()
+    else:
+        return DEFAULT_CONFIG.copy()
+
 # Helper to list camera device names on macOS using ffmpeg
 
 def list_mac_cameras():
@@ -349,7 +378,15 @@ def draw_sitting_timer(image, elapsed_time, alerted):
 
 def run_normal_mode(cam_index):
     """Run the normal pose detection mode with personalized thresholds"""
+    # Load configuration
+    config = load_config()
+    
     print(f"Using camera index {cam_index}")
+    print(f"Configuration loaded:")
+    print(f"  Alert duration: {config['alert_duration_seconds']} seconds")
+    print(f"  Monitor detection: {'Enabled' if config['monitor_detection_enabled'] else 'Disabled'}")
+    print(f"  Sitting threshold: {config['sitting_duration_threshold']} seconds")
+    print(f"  Bad posture threshold: {config['bad_posture_duration_threshold']} seconds")
 
     # Initialize MediaPipe pose and drawing utilities
     mp_pose = mp.solutions.pose
@@ -387,22 +424,46 @@ def run_normal_mode(cam_index):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
 
+    # Get actual frame rate
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        # If FPS is not available, estimate it
+        print("FPS not available from camera, estimating...")
+        start_time = time.time()
+        for _ in range(30):  # Sample 30 frames
+            ret, _ = cap.read()
+            if not ret:
+                break
+        end_time = time.time()
+        fps = 30 / (end_time - start_time) if (end_time - start_time) > 0 else 30
+    
+    print(f"Camera frame rate: {fps:.1f} FPS")
+    
+    # Calculate alert threshold based on frame rate and configuration
+    alert_threshold = max(1, int(fps * config['alert_duration_seconds']))
+    print(f"Alert threshold set to {alert_threshold} frames ({alert_threshold/fps:.1f} seconds)")
+
     # Alert logic
     bad_posture_frames = 0
-    alert_threshold = 30  # Number of consecutive frames before alert
     bad_posture_start_time = None
     bad_posture_alerted = False
-    BAD_POSTURE_DURATION_THRESHOLD = 60  # seconds
+    BAD_POSTURE_DURATION_THRESHOLD = config['bad_posture_duration_threshold']  # seconds
+    last_announcement_time = 0
+    ANNOUNCEMENT_INTERVAL = config['announcement_interval']  # Announce every N seconds when bad posture continues
     
     # Sitting timer logic
     sitting_start_time = time.time()
     sitting_alerted = False
-    SITTING_DURATION_THRESHOLD = 20 * 60  # 20 minutes in seconds
+    SITTING_DURATION_THRESHOLD = config['sitting_duration_threshold']  # seconds
     total_sitting_time = 0  # Track total actual sitting time
     last_pose_time = None  # Track when pose was last detected
     pose_detection_threshold = 3  # Seconds without pose detection to consider "not sitting"
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        # Create window with proper close handling
+        cv2.namedWindow('Pose Detection', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 1)
+        
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -463,15 +524,29 @@ def run_normal_mode(cam_index):
                     if bad_posture_start_time is None:
                         bad_posture_start_time = time.time()
                         bad_posture_alerted = False
+                        last_announcement_time = 0
                     bad_posture_frames += 1
                     cv2.putText(image, "Bad posture detected!", (30, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    
+                    current_time = time.time()
+                    elapsed = current_time - bad_posture_start_time
+                    
+                    # Initial alert after threshold frames
                     if bad_posture_frames == alert_threshold:
                         play_ding()  # Play ding sound
                         engine.say("Please sit up straight!")
                         engine.runAndWait()
-                    # Check if bad posture has lasted for 1 minute
-                    elapsed = time.time() - bad_posture_start_time
+                        last_announcement_time = current_time
+                    
+                    # Continuous announcements every ANNOUNCEMENT_INTERVAL seconds
+                    elif (current_time - last_announcement_time) >= ANNOUNCEMENT_INTERVAL:
+                        play_ding()  # Play ding sound
+                        engine.say("Please sit up straight!")
+                        engine.runAndWait()
+                        last_announcement_time = current_time
+                    
+                    # Check if bad posture has lasted for the configured threshold
                     if elapsed >= BAD_POSTURE_DURATION_THRESHOLD and not bad_posture_alerted:
                         play_ding()  # Play ding sound
                         engine.say("stand up")
@@ -491,7 +566,8 @@ def run_normal_mode(cam_index):
                 sitting_elapsed = time.time() - sitting_start_time
                 if sitting_elapsed >= SITTING_DURATION_THRESHOLD and not sitting_alerted:
                     play_ding()  # Play ding sound
-                    engine.say("you've been sitting for 20min, take a rest")
+                    minutes = SITTING_DURATION_THRESHOLD // 60
+                    engine.say(f"you've been sitting for {minutes} minutes, take a rest")
                     engine.runAndWait()
                     sitting_alerted = True
             else:
@@ -500,9 +576,22 @@ def run_normal_mode(cam_index):
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
+            # Add close button and instructions
+            cv2.putText(image, "Press 'q' to quit", (10, image.shape[0] - 20), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            
             # Show the image (landscape)
             cv2.imshow('Pose Detection', image)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            
+            # Check for quit key (q) or window close
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                print("Quit requested by user")
+                break
+            
+            # Check if window was closed
+            if cv2.getWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE) < 1:
+                print("Window closed by user")
                 break
 
         cap.release()
