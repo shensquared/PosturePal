@@ -162,17 +162,22 @@ def main():
             control_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 30))  # More space below controls
             control_frame.grid_rowconfigure(0, minsize=80)  # Minimum height for controls
             
+            # Configure columns for equal spacing
+            control_frame.grid_columnconfigure(0, weight=1)
+            control_frame.grid_columnconfigure(1, weight=1)
+            control_frame.grid_columnconfigure(2, weight=1)
+            
             self.start_btn = ttk.Button(control_frame, text="Start Posture Detection", 
                                        command=self.start_posture_detection)
-            self.start_btn.grid(row=0, column=0, padx=(0, 5), pady=5)
+            self.start_btn.grid(row=0, column=0, padx=(0, 5), pady=5, sticky=(tk.W, tk.E))
             
             self.stop_btn = ttk.Button(control_frame, text="Stop Posture Detection", 
                                       command=self.stop_posture_detection)
-            self.stop_btn.grid(row=0, column=1, padx=(5, 0), pady=5)
+            self.stop_btn.grid(row=0, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
             
             calibrate_btn = ttk.Button(control_frame, text="Run Calibration", 
                                       command=self.run_calibration)
-            calibrate_btn.grid(row=1, column=0, columnspan=2, pady=5)
+            calibrate_btn.grid(row=0, column=2, padx=(5, 0), pady=5, sticky=(tk.W, tk.E))
         
         def create_log_section(self, parent, row):
             """Create log display section"""
