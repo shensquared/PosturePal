@@ -12,12 +12,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 mkdir -p "$LAUNCH_AGENTS_DIR"
 
-# Copy the plist file to LaunchAgents
+# Copy the plist file to LaunchAgents and update paths
 PLIST_SOURCE="$SCRIPT_DIR/com.user.posturedetection.plist"
 PLIST_DEST="$LAUNCH_AGENTS_DIR/com.user.posturedetection.plist"
 
 echo "Installing launch agent..."
 cp "$PLIST_SOURCE" "$PLIST_DEST"
+
+# Update the WorkingDirectory in the plist to use the actual script directory
+echo "Updating paths in launch agent..."
+sed -i.bak "s|<string>\.</string>|<string>$SCRIPT_DIR</string>|g" "$PLIST_DEST"
+rm -f "$PLIST_DEST.bak"
 
 # Load the launch agent
 echo "Loading launch agent..."

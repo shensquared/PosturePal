@@ -7,8 +7,8 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>/Users/shenshen/code/projects/sitstraight/monitor_detector.py</string>
+        <string>/bin/bash</string>
+        <string>simple_posture_launcher.sh</string>
     </array>
     
     <key>RunAtLoad</key>
@@ -18,18 +18,24 @@
     <true/>
     
     <key>StandardOutPath</key>
-    <string>/Users/shenshen/code/projects/sitstraight/monitor_detector_stdout.log</string>
+    <string>simple_posture.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/shenshen/code/projects/sitstraight/monitor_detector_stderr.log</string>
+    <string>simple_posture.log</string>
     
     <key>WorkingDirectory</key>
-    <string>/Users/shenshen/code/projects/sitstraight</string>
+    <string>.</string>
     
     <key>ProcessType</key>
     <string>Background</string>
     
     <key>ThrottleInterval</key>
     <integer>5</integer>
+    
+    <key>LSUIElement</key>
+    <true/>
+    
+    <key>HideDockIcon</key>
+    <true/>
 </dict>
 </plist> 

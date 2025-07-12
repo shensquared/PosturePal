@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posture Widget</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: transparent;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .widget {
+            width: 300px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .widget::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            animation: progress 20m linear infinite;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            color: #fff;
+        }
+        
+        .status {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .timer {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .time {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'SF Mono', Monaco, monospace;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .posture-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .posture-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+        
+        .posture-indicator.warning {
+            background: #ffff00;
+        }
+        
+        .posture-indicator.danger {
+            background: #ff0000;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .posture-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .widget:hover .controls {
+            opacity: 1;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .draggable {
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget" id="widget">
+        <div class="controls">
+            <button class="control-btn" onclick="toggleVisibility()">−</button>
+            <button class="control-btn" onclick="closeWidget()">×</button>
+        </div>
+        
+        <div class="header">
+            <h1 class="title">Posture Monitor</h1>
+            <div class="status" id="status">Connected</div>
+        </div>
+        
+        <div class="timer">
+            <div class="time" id="timer">00:00</div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            <div class="progress-text" id="progress-text">0% of 20min session</div>
+        </div>
+        
+        <div class="posture-status">
+            <div class="posture-indicator" id="posture-indicator"></div>
+            <div class="posture-text" id="posture-text">Good Posture</div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let isPaused = false;
+        let pauseStartTime = 0;
+        let totalPausedTime = 0;
+        
+        // Make widget draggable
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        
+        document.getElementById('widget').addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('control-btn')) return;
+            
+            isDragging = true;
+            const rect = this.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            this.style.cursor = 'grabbing';
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            
+            const widget = document.getElementById('widget');
+            const x = e.clientX - dragOffset.x;
+            const y = e.clientY - dragOffset.y;
+            
+            widget.style.position = 'fixed';
+            widget.style.left = x + 'px';
+            widget.style.top = y + 'px';
+        });
+        
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                document.getElementById('widget').style.cursor = 'grab';
+            }
+        });
+        
+        function updateTimer() {
+            const now = Date.now();
+            let elapsed;
+            
+            if (isPaused) {
+                elapsed = pauseStartTime - startTime - totalPausedTime;
+            } else {
+                elapsed = now - startTime - totalPausedTime;
+            }
+            
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update progress (20 minutes = 100%)
+            const progress = Math.min((elapsed / (20 * 60 * 1000)) * 100, 100);
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = 
+                `${Math.round(progress)}% of 20min session`;
+            
+            // Update status based on progress
+            const status = document.getElementById('status');
+            const indicator = document.getElementById('posture-indicator');
+            const text = document.getElementById('posture-text');
+            
+            if (progress < 50) {
+                status.textContent = 'Good Progress';
+                indicator.className = 'posture-indicator';
+                text.textContent = 'Keep Going!';
+            } else if (progress < 75) {
+                status.textContent = 'Getting Close';
+                indicator.className = 'posture-indicator warning';
+                text.textContent = 'Consider a Break';
+            } else {
+                status.textContent = 'Time for Break!';
+                indicator.className = 'posture-indicator danger';
+                text.textContent = 'Take a Walk!';
+            }
+        }
+        
+        function togglePause() {
+            if (isPaused) {
+                // Resume
+                totalPausedTime += Date.now() - pauseStartTime;
+                isPaused = false;
+                document.getElementById('status').textContent = 'Connected';
+            } else {
+                // Pause
+                pauseStartTime = Date.now();
+                isPaused = true;
+                document.getElementById('status').textContent = 'Paused';
+            }
+        }
+        
+        function toggleVisibility() {
+            const widget = document.getElementById('widget');
+            if (widget.style.opacity === '0.3') {
+                widget.style.opacity = '1';
+            } else {
+                widget.style.opacity = '0.3';
+            }
+        }
+        
+        function closeWidget() {
+            window.close();
+        }
+        
+        // Simulate posture detection (replace with real data from your Python script)
+        function simulatePostureDetection() {
+            // Randomly change posture status for demo
+            const statuses = ['Good Posture', 'Slight Slouch', 'Bad Posture'];
+            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+            document.getElementById('posture-text').textContent = randomStatus;
+        }
+        
+        // Update timer every second
+        setInterval(updateTimer, 1000);
+        
+        // Simulate posture changes every 5 seconds (for demo)
+        setInterval(simulatePostureDetection, 5000);
+        
+        // Initialize
+        updateTimer();
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'p' || e.key === 'P') {
+                togglePause();
+            } else if (e.key === 'h' || e.key === 'H') {
+                toggleVisibility();
+            }
+        });
+    </script>
+</body>
+</html> 
