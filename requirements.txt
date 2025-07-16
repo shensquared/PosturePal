@@ -7,3 +7,7 @@ opencv-python>=4.8.0
 mediapipe>=0.10.0
 numpy>=1.24.0
 pyttsx3>=2.90
+
+# Menu bar integration (optional)
+rumps>=0.4.0
+pyobjc-framework-Cocoa>=9.0

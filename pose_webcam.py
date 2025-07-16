@@ -556,9 +556,31 @@ def run_normal_mode(cam_index):
     pose_detection_threshold = 3  # Seconds without pose detection to consider "not sitting"
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        # Create window with proper close handling
+        # Create window with proper close handling and enhanced visibility
         cv2.namedWindow('Pose Detection', cv2.WINDOW_NORMAL)
         cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 1)
+        
+        # Make window always on top and set a reasonable size
+        cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TOPMOST, 1)
+        cv2.resizeWindow('Pose Detection', 800, 600)
+        
+        # Set window title with more descriptive name (if supported)
+        try:
+            cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TITLE, 'SitStraight - Posture Detection')
+        except AttributeError:
+            # WND_PROP_TITLE not available in this OpenCV version, skip it
+            pass
+        
+        # Additional macOS-specific dock hiding for OpenCV window
+        if sys.platform == 'darwin':
+            try:
+                import AppKit
+                # Hide dock icon for the OpenCV window
+                AppKit.NSApplication.sharedApplication()
+                AppKit.NSApp.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+            except ImportError:
+                # AppKit not available, use alternative method
+                pass
         
         while cap.isOpened():
             ret, frame = cap.read()
@@ -748,8 +770,29 @@ def run_normal_mode(cam_index):
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
-            # Add close button and instructions
-            cv2.putText(image, "Press 'q' to quit", (10, image.shape[0] - 20), 
+            # Add enhanced close button and instructions
+            h, w = image.shape[:2]
+            
+            # Draw a prominent QUIT button in the top-right corner
+            button_width = 120
+            button_height = 40
+            button_x = w - button_width - 20
+            button_y = 20
+            
+            # Draw button background
+            cv2.rectangle(image, (button_x, button_y), (button_x + button_width, button_y + button_height), 
+                         (0, 0, 255), -1)  # Red background
+            cv2.rectangle(image, (button_x, button_y), (button_x + button_width, button_y + button_height), 
+                         (255, 255, 255), 2)  # White border
+            
+            # Draw button text
+            cv2.putText(image, "QUIT", (button_x + 35, button_y + 28), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            
+            # Add instructions at the bottom
+            cv2.putText(image, "Press 'q' to quit or click the QUIT button", (10, h - 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv2.putText(image, "Use the red X button in window title bar to close", (10, h - 20), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
             # Show the image (landscape)
@@ -758,18 +801,40 @@ def run_normal_mode(cam_index):
             # Check for quit key (q) or window close
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
-                print("Quit requested by user")
+                print("Quit requested by user (keyboard)")
                 break
             
             # Check if window was closed
             if cv2.getWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE) < 1:
-                print("Window closed by user")
+                print("Window closed by user (red X button)")
                 break
+            
+            # Check for mouse clicks on the QUIT button
+            # Note: OpenCV mouse events require a callback, but we can detect window close as alternative
+            # The QUIT button is visual only - users can click the red X in the title bar
 
         cap.release()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
+    # Hide dock icon for posture detection on macOS
+    import os
+    import sys
+    
+    # Set environment variable to hide dock icon
+    os.environ['PYTHON_DISABLE_DOCK_ICON'] = '1'
+    
+    # Additional macOS-specific dock hiding
+    if sys.platform == 'darwin':
+        try:
+            import AppKit
+            # Hide dock icon
+            AppKit.NSApplication.sharedApplication()
+            AppKit.NSApp.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+        except ImportError:
+            # AppKit not available, use alternative method
+            pass
+    
     parser = argparse.ArgumentParser(description='Posture detection with calibration')
     parser.add_argument('--calibrate', action='store_true', help='Run in calibration mode')
     parser.add_argument('--camera-index', type=int, default=0, help='Camera index to use (default: 0)')

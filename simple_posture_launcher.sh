@@ -33,6 +33,6 @@ else
     log_message "No config.json found, using default camera index 0"
 fi
 
-python pose_webcam.py --camera-index $CAMERA_INDEX
+PYTHON_DISABLE_DOCK_ICON=1 python pose_webcam.py --camera-index $CAMERA_INDEX
 
 log_message "Posture detection stopped" 

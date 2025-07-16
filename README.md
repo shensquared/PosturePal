@@ -11,7 +11,10 @@ A smart posture detection system that helps you maintain good sitting posture an
 - **Auto-start on login** (optional)
 - **Monitor detection** (optional - pauses when monitor is off)
 - **Continuous voice alerts** until posture improves
-- **Hidden dock icon** for clean desktop experience
+- **Hidden dock icons** for clean desktop experience (menu bar and posture detection)
+- **Enhanced window controls** with prominent quit button and always-on-top
+- **Menu bar integration** for easy access to controls
+- **Multiple ways to quit** (keyboard, window close, menu bar)
 
 ## Quick Start
 
@@ -42,7 +45,7 @@ python pose_webcam.py
 For easy configuration through a graphical interface:
 
 ```bash
-python config_gui.py
+python run_gui.py
 ```
 
 The GUI provides:
@@ -52,6 +55,20 @@ The GUI provides:
 - 🎮 **One-click controls** to start/stop posture detection
 - 📝 **Activity log** showing recent actions
 - 🔧 **Calibration launcher** for posture training
+
+### Menu Bar Integration (New!)
+For quick access to controls from the macOS menu bar:
+
+```bash
+./start_menu_bar.sh
+```
+
+The menu bar app provides:
+- 🪑 **SitStraight icon** in the menu bar
+- 🟢 **Real-time status** indicator (Running/Stopped)
+- ⚡ **Quick start/stop** controls
+- ⚙️ **Easy access** to settings and calibration
+- 🔔 **System notifications** for status changes
 
 ### Command Line Configuration
 For advanced users or scripting:
@@ -95,9 +112,9 @@ python config_manager.py --camera 1  # Use camera index 1
 | `monitor_detection_enabled` | `false` | Pause when monitor is off |
 | `alert_duration_seconds` | `5.0` | Time before first bad posture alert |
 | `camera_index` | `0` | Camera device to use |
-| `sitting_duration_threshold` | `1200` | Sitting time before break reminder (20 min) |
-| `bad_posture_duration_threshold` | `60` | Bad posture time before "stand up" alert |
-| `announcement_interval` | `5` | Seconds between continuous alerts |
+| `sitting_duration_threshold` | `1800` | Sitting time before "stand up" alert (30 min) |
+| `bad_posture_duration_threshold` | `10` | Bad posture time before voice alert |
+| `announcement_interval` | `15` | Seconds between continuous alerts |
 
 ## Manual Setup (Alternative)
 
@@ -134,6 +151,8 @@ rm ~/Library/LaunchAgents/com.sitstraight.posture.plist
 sitstraight/
 ├── pose_webcam.py              # Main posture detection script
 ├── run_gui.py                  # GUI configuration interface
+├── menu_bar_controller.py      # Menu bar integration
+├── start_menu_bar.sh           # Menu bar launcher script
 ├── config_manager.py           # Command-line configuration tool
 ├── config.json                 # Configuration file
 ├── posture_calibration.json    # Personalized calibration data

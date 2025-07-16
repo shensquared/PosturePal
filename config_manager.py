@@ -149,8 +149,8 @@ def start_posture_detection():
     log_file = os.path.abspath('simple_posture.log')
     
     # Use nohup to ensure the process continues even if parent exits
-    # Create the command as a string for shell execution
-    cmd = f"nohup /bin/bash {launcher_path} > {log_file} 2>&1 &"
+    # Create the command as a string for shell execution with dock icon hidden
+    cmd = f"PYTHON_DISABLE_DOCK_ICON=1 nohup /bin/bash {launcher_path} > {log_file} 2>&1 &"
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Give it a moment to start

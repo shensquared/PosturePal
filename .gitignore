@@ -3,6 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Configuration files (keep these in version control)
 # *.json
 
 # C extensions
