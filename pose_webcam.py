@@ -17,9 +17,12 @@ DEFAULT_CONFIG = {
     "monitor_detection_enabled": False,
     "alert_duration_seconds": 5.0,
     "camera_index": 0,
-    "sitting_duration_threshold": 1200,
+    "sitting_duration_threshold": 1800,
     "bad_posture_duration_threshold": 60,
-    "announcement_interval": 5
+    "announcement_interval": 5,
+    "camera_width": 640,  # Lower resolution for better performance
+    "camera_height": 480,  # Lower resolution for better performance
+    "processing_fps": 10   # Process every Nth frame instead of every frame
 }
 
 def load_config():
@@ -64,12 +67,12 @@ def play_ding():
     try:
         # macOS system sound
         os.system('afplay /System/Library/Sounds/Glass.aiff')
-    except:
+    except Exception as e:
         # Fallback: try different system sounds
         try:
             os.system('afplay /System/Library/Sounds/Ping.aiff')
-        except:
-            print("Could not play ding sound")
+        except Exception as e2:
+            print(f"Could not play ding sound: {e}, {e2}")
 
 # Calibration system
 
@@ -79,8 +82,8 @@ class PostureCalibrator:
         self.good_examples = []
         self.bad_examples = []
         self.personalized_thresholds = {
-            'slouching_threshold': 0.15,
-            'forward_head_threshold': 0.15
+            'head_height_threshold': 0.1,
+            'nose_height_threshold': 0.7  # Nose should be in upper 30% of frame for good posture
         }
         self.load_calibration()
     
@@ -92,7 +95,14 @@ class PostureCalibrator:
                     data = json.load(f)
                     self.good_examples = data.get('good_examples', [])
                     self.bad_examples = data.get('bad_examples', [])
-                    self.personalized_thresholds = data.get('thresholds', self.personalized_thresholds)
+                    loaded_thresholds = data.get('thresholds', {})
+                    
+                    # Merge with defaults to ensure all required thresholds exist
+                    for key, value in self.personalized_thresholds.items():
+                        if key not in loaded_thresholds:
+                            loaded_thresholds[key] = value
+                    
+                    self.personalized_thresholds = loaded_thresholds
                 print(f"Loaded calibration data: {len(self.good_examples)} good, {len(self.bad_examples)} bad examples")
             except Exception as e:
                 print(f"Error loading calibration: {e}")
@@ -115,20 +125,18 @@ class PostureCalibrator:
         """Calculate posture measurements from landmarks"""
         left_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
         right_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
-        left_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value]
-        right_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
         nose = landmarks[mp_pose.PoseLandmark.NOSE.value]
         
         avg_shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
-        avg_hip_y = (left_hip.y + right_hip.y) / 2
-        avg_hip_x = (left_hip.x + right_hip.x) / 2
         
-        slouching_measurement = avg_shoulder_y - avg_hip_y
-        forward_head_measurement = abs(nose.x - avg_hip_x)
+        # Head height: vertical distance from shoulders to nose
+        head_height_measurement = avg_shoulder_y - nose.y  # Positive when head is above shoulders
+        # Nose height in frame: relative position from top of frame (0 = top, 1 = bottom)
+        nose_height_in_frame = nose.y  # MediaPipe y-coordinate is 0 at top, 1 at bottom
         
         return {
-            'slouching': slouching_measurement,
-            'forward_head': forward_head_measurement
+            'head_height': head_height_measurement,
+            'nose_height_in_frame': nose_height_in_frame
         }
     
     def add_example(self, landmarks, is_good, mp_pose):
@@ -141,10 +149,10 @@ class PostureCalibrator:
         
         if is_good:
             self.good_examples.append(example)
-            print(f"Added good example (slouching: {measurements['slouching']:.3f}, forward_head: {measurements['forward_head']:.3f})")
+            print(f"Added good example (head_height: {measurements['head_height']:.3f}, nose_height: {measurements['nose_height_in_frame']:.3f})")
         else:
             self.bad_examples.append(example)
-            print(f"Added bad example (slouching: {measurements['slouching']:.3f}, forward_head: {measurements['forward_head']:.3f})")
+            print(f"Added bad example (head_height: {measurements['head_height']:.3f}, nose_height: {measurements['nose_height_in_frame']:.3f})")
     
     def calculate_personalized_thresholds(self):
         """Calculate personalized thresholds from collected examples"""
@@ -153,35 +161,35 @@ class PostureCalibrator:
             return False
         
         # Calculate statistics for good examples
-        good_slouching = [ex['measurements']['slouching'] for ex in self.good_examples]
-        good_forward_head = [ex['measurements']['forward_head'] for ex in self.good_examples]
+        good_head_height = [ex['measurements']['head_height'] for ex in self.good_examples]
+        good_nose_height = [ex['measurements']['nose_height_in_frame'] for ex in self.good_examples]
         
         # Calculate statistics for bad examples
-        bad_slouching = [ex['measurements']['slouching'] for ex in self.bad_examples]
-        bad_forward_head = [ex['measurements']['forward_head'] for ex in self.bad_examples]
+        bad_head_height = [ex['measurements']['head_height'] for ex in self.bad_examples]
+        bad_nose_height = [ex['measurements']['nose_height_in_frame'] for ex in self.bad_examples]
         
         # Set thresholds as midpoint between good and bad distributions
-        self.personalized_thresholds['slouching_threshold'] = (
-            np.mean(good_slouching) + np.mean(bad_slouching)
+        self.personalized_thresholds['head_height_threshold'] = (
+            np.mean(good_head_height) + np.mean(bad_head_height)
         ) / 2
         
-        self.personalized_thresholds['forward_head_threshold'] = (
-            np.mean(good_forward_head) + np.mean(bad_forward_head)
+        self.personalized_thresholds['nose_height_threshold'] = (
+            np.mean(good_nose_height) + np.mean(bad_nose_height)
         ) / 2
         
         print(f"Personalized thresholds calculated:")
-        print(f"  Slouching: {self.personalized_thresholds['slouching_threshold']:.3f}")
-        print(f"  Forward head: {self.personalized_thresholds['forward_head_threshold']:.3f}")
+        print(f"  Head height: {self.personalized_thresholds['head_height_threshold']:.3f}")
+        print(f"  Nose height: {self.personalized_thresholds['nose_height_threshold']:.3f}")
         return True
     
     def is_bad_pose(self, landmarks, mp_pose):
         """Check if pose is bad using personalized thresholds"""
         measurements = self.calculate_measurements(landmarks, mp_pose)
         
-        slouching = measurements['slouching'] > self.personalized_thresholds['slouching_threshold']
-        forward_head = measurements['forward_head'] > self.personalized_thresholds['forward_head_threshold']
+        head_height_bad = measurements['head_height'] < self.personalized_thresholds['head_height_threshold']
+        nose_height_bad = measurements['nose_height_in_frame'] > self.personalized_thresholds['nose_height_threshold']
         
-        return slouching or forward_head
+        return head_height_bad or nose_height_bad
 
 def run_calibration_mode(cam_index):
     """Run the calibration mode to collect posture examples"""
@@ -194,6 +202,16 @@ def run_calibration_mode(cam_index):
     print("5. Press 'q' to quit")
     print()
     
+    # List available cameras on macOS
+    print("Available cameras:")
+    cameras = list_mac_cameras()
+    if cameras:
+        for idx, name in cameras:
+            print(f"  [{idx}] {name}")
+    else:
+        print("  Could not detect cameras automatically")
+    print()
+    
     print(f"Using camera index {cam_index}")
 
     # Initialize MediaPipe pose and drawing utilities
@@ -202,6 +220,9 @@ def run_calibration_mode(cam_index):
 
     # Initialize calibrator
     calibrator = PostureCalibrator()
+    
+    # Debug: Print loaded thresholds
+    print(f"DEBUG: Loaded thresholds - Head height: {calibrator.personalized_thresholds['head_height_threshold']:.3f}, Nose height: {calibrator.personalized_thresholds['nose_height_threshold']:.3f}")
 
     # Open selected webcam
     print(f"Attempting to open camera at index {cam_index}...")
@@ -216,14 +237,29 @@ def run_calibration_mode(cam_index):
             print("Failed to open any camera. Exiting.")
             return
     
+    # Verify the camera is actually working by reading a test frame
+    ret, test_frame = cap.read()
+    if not ret or test_frame is None:
+        print(f"Camera at index {cam_index} opened but cannot read frames")
+        print("Trying to open camera at index 0...")
+        cap.release()
+        cap = cv2.VideoCapture(0)
+        ret, test_frame = cap.read()
+        if not ret or test_frame is None:
+            print("Failed to open any working camera. Exiting.")
+            return
+    
     # Get camera info to verify
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     print(f"Camera opened successfully: {width}x{height}")
 
-    # Optionally, try to set a portrait resolution (may not be supported by all cameras)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
+    # Set lower resolution for better performance
+    config = load_config()
+    target_width = config.get('camera_width', 640)
+    target_height = config.get('camera_height', 480)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, target_width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, target_height)
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         while cap.isOpened():
@@ -268,18 +304,20 @@ def run_calibration_mode(cam_index):
 
                 # Show current measurements
                 measurements = calibrator.calculate_measurements(results.pose_landmarks.landmark, mp_pose)
-                cv2.putText(image, f"Slouching: {measurements['slouching']:.3f}", (10, 30),
+                cv2.putText(image, f"Head Height: {measurements['head_height']:.3f}", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                cv2.putText(image, f"Forward Head: {measurements['forward_head']:.3f}", (10, 60),
+                cv2.putText(image, f"Nose Height: {measurements['nose_height_in_frame']:.3f}", (10, 60),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-                
-                # Show current thresholds
-                cv2.putText(image, f"Thresholds - S: {calibrator.personalized_thresholds['slouching_threshold']:.3f}, F: {calibrator.personalized_thresholds['forward_head_threshold']:.3f}", 
-                            (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+                # Show current thresholds (always from calibrator.personalized_thresholds)
+                cv2.putText(
+                    image,
+                    f"Thresholds: H={calibrator.personalized_thresholds['head_height_threshold']:.3f}, N={calibrator.personalized_thresholds['nose_height_threshold']:.3f}",
+                    (10, 90),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                 
                 # Show example counts
                 cv2.putText(image, f"Examples - Good: {len(calibrator.good_examples)}, Bad: {len(calibrator.bad_examples)}", 
-                            (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+                            (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
 
             # Show the image (landscape)
             cv2.imshow('Posture Calibration', image)
@@ -376,10 +414,63 @@ def draw_sitting_timer(image, elapsed_time, alerted):
         cv2.putText(image, "TAKE A BREAK!", (timer_x, timer_y + 50), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
+def draw_posture_metrics(image, measurements, thresholds, bad_reasons=None):
+    """Draw posture metrics on the image"""
+    # Get image dimensions
+    h, w = image.shape[:2]
+    
+    # Metrics position (bottom-left corner, above quit instruction)
+    metrics_x = 10
+    metrics_y = h - 120  # Moved back up since we removed one metric
+    
+    # Calculate text size to determine background rectangle size
+    font_scale = 0.4
+    font_thickness = 1
+    line_height = 18
+    
+    # Draw metrics without background rectangle for less visual interference
+    y_offset = 0
+    
+    # Head height measurement
+    head_height_status = "❌" if measurements['head_height'] < thresholds['head_height_threshold'] else "✅"
+    head_height_color = (0, 0, 255) if measurements['head_height'] < thresholds['head_height_threshold'] else (0, 255, 0)
+    cv2.putText(image, f"{head_height_status} Height: {measurements['head_height']:.3f} (>{thresholds['head_height_threshold']:.3f})", 
+                (metrics_x, metrics_y + y_offset), cv2.FONT_HERSHEY_SIMPLEX, font_scale, head_height_color, font_thickness)
+    y_offset += line_height
+    
+    # Nose height in frame measurement (now used for alerts)
+    nose_height_status = "❌" if measurements['nose_height_in_frame'] > thresholds['nose_height_threshold'] else "✅"
+    nose_height_color = (0, 0, 255) if measurements['nose_height_in_frame'] > thresholds['nose_height_threshold'] else (0, 255, 0)
+    cv2.putText(image, f"{nose_height_status} Nose Y: {measurements['nose_height_in_frame']:.3f} (<{thresholds['nose_height_threshold']:.3f})", 
+                (metrics_x, metrics_y + y_offset), cv2.FONT_HERSHEY_SIMPLEX, font_scale, nose_height_color, font_thickness)
+    y_offset += line_height
+    # Show thresholds below the metrics
+    cv2.putText(
+        image,
+        f"Thresholds: H={thresholds['head_height_threshold']:.3f}, N={thresholds['nose_height_threshold']:.3f}",
+        (metrics_x, metrics_y + y_offset),
+        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
+    
+    # Draw bad posture warning if any (smaller and more subtle)
+    if bad_reasons:
+        y_offset += line_height + 5
+        cv2.putText(image, f"⚠️ BAD POSTURE", (metrics_x, metrics_y + y_offset), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
 def run_normal_mode(cam_index):
     """Run the normal pose detection mode with personalized thresholds"""
     # Load configuration
     config = load_config()
+    
+    # List available cameras on macOS
+    print("Available cameras:")
+    cameras = list_mac_cameras()
+    if cameras:
+        for idx, name in cameras:
+            print(f"  [{idx}] {name}")
+    else:
+        print("  Could not detect cameras automatically")
+    print()
     
     print(f"Using camera index {cam_index}")
     print(f"Configuration loaded:")
@@ -401,6 +492,9 @@ def run_normal_mode(cam_index):
 
     # Initialize calibrator for personalized thresholds
     calibrator = PostureCalibrator()
+    
+    # Debug: Print loaded thresholds
+    print(f"DEBUG: Loaded thresholds - Head height: {calibrator.personalized_thresholds['head_height_threshold']:.3f}, Nose height: {calibrator.personalized_thresholds['nose_height_threshold']:.3f}")
 
     # Open selected webcam
     print(f"Attempting to open camera at index {cam_index}...")
@@ -420,9 +514,11 @@ def run_normal_mode(cam_index):
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     print(f"Camera opened successfully: {width}x{height}")
 
-    # Optionally, try to set a portrait resolution (may not be supported by all cameras)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
+    # Set lower resolution for better performance
+    target_width = config.get('camera_width', 640)
+    target_height = config.get('camera_height', 480)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, target_width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, target_height)
 
     # Get actual frame rate
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -484,6 +580,13 @@ def run_normal_mode(cam_index):
                 # If this is the first pose detection after being away, resume timer
                 if sitting_start_time is None:
                     sitting_start_time = current_time
+                    debug_msg = f"DEBUG: Sitting timer started at {time.strftime('%H:%M:%S')}"
+                    print(debug_msg)
+                    try:
+                        with open('simple_posture.log', 'a') as f:
+                            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                    except:
+                        pass
             else:
                 # No pose detected - check if we should pause timer
                 if last_pose_time and (current_time - last_pose_time) > pose_detection_threshold:
@@ -495,83 +598,152 @@ def run_normal_mode(cam_index):
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             if results.pose_landmarks:
-                print("Pose detected!")
-                # Draw pose landmarks and connections
-                mp_drawing.draw_landmarks(
-                    image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-
-                # Annotate each skeleton line with body part names
+                # Calculate measurements for posture detection
+                measurements = calibrator.calculate_measurements(results.pose_landmarks.landmark, mp_pose)
+                # Draw only the key points used for posture calculation
                 landmark_points = results.pose_landmarks.landmark
                 h, w = image.shape[:2]
-                for connection in mp_pose.POSE_CONNECTIONS:
-                    start_idx, end_idx = connection
-                    start_lm = landmark_points[start_idx]
-                    end_lm = landmark_points[end_idx]
-                    # Get pixel coordinates
-                    start_xy = (int(start_lm.x * w), int(start_lm.y * h))
-                    end_xy = (int(end_lm.x * w), int(end_lm.y * h))
-                    # Get landmark names
-                    start_name = mp_pose.PoseLandmark(start_idx).name.replace("_", " ").title()
-                    end_name = mp_pose.PoseLandmark(end_idx).name.replace("_", " ").title()
-                    # Draw text near each endpoint
-                    cv2.putText(image, start_name, (start_xy[0]+5, start_xy[1]-5),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
-                    cv2.putText(image, end_name, (end_xy[0]+5, end_xy[1]-5),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
+                
+                # Draw key landmarks: shoulders, nose
+                key_landmarks = [
+                    mp_pose.PoseLandmark.LEFT_SHOULDER,
+                    mp_pose.PoseLandmark.RIGHT_SHOULDER,
+                    mp_pose.PoseLandmark.NOSE
+                ]
+                
+                for landmark in key_landmarks:
+                    lm = landmark_points[landmark.value]
+                    x, y = int(lm.x * w), int(lm.y * h)
+                    # Draw circle for each key point
+                    cv2.circle(image, (x, y), 8, (0, 255, 0), -1)  # Green circles
+                    # Draw landmark name
+                    name = landmark.name.replace("_", " ").title()
+                    cv2.putText(image, name, (x+10, y-10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                
+                # Draw line connecting shoulders for visual reference
+                left_shoulder = landmark_points[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
+                right_shoulder = landmark_points[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+                
+                # Shoulder line
+                cv2.line(image, 
+                        (int(left_shoulder.x * w), int(left_shoulder.y * h)),
+                        (int(right_shoulder.x * w), int(right_shoulder.y * h)),
+                        (255, 255, 0), 2)  # Yellow line
 
                 # Check for bad posture using personalized thresholds
-                if calibrator.is_bad_pose(results.pose_landmarks.landmark, mp_pose):
+                measurements = calibrator.calculate_measurements(results.pose_landmarks.landmark, mp_pose)
+                bad_reasons = []
+                
+                if measurements['head_height'] < calibrator.personalized_thresholds['head_height_threshold']:
+                    bad_reasons.append("head height")
+                if measurements['nose_height_in_frame'] > calibrator.personalized_thresholds['nose_height_threshold']:
+                    bad_reasons.append("nose too low")
+                
+                if bad_reasons:
                     if bad_posture_start_time is None:
                         bad_posture_start_time = time.time()
                         bad_posture_alerted = False
                         last_announcement_time = 0
+                        debug_msg = f"DEBUG: Bad posture detected: {bad_reasons}"
+                        print(debug_msg)
+                        # Also write to log file
+                        try:
+                            with open('simple_posture.log', 'a') as f:
+                                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                        except:
+                            pass
                     bad_posture_frames += 1
-                    cv2.putText(image, "Bad posture detected!", (30, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    
+                    cv2.putText(image, f"Bad posture: {', '.join(bad_reasons)}", (30, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
                     
                     current_time = time.time()
                     elapsed = current_time - bad_posture_start_time
                     
-                    # Initial alert after threshold frames
-                    if bad_posture_frames == alert_threshold:
-                        play_ding()  # Play ding sound
-                        engine.say("Please sit up straight!")
-                        engine.runAndWait()
+                    # Initial alert after bad posture duration threshold
+                    if elapsed >= BAD_POSTURE_DURATION_THRESHOLD and last_announcement_time == 0:
+                        debug_msg = f"DEBUG: Bad posture alert triggered after {elapsed:.1f} seconds (threshold: {BAD_POSTURE_DURATION_THRESHOLD})"
+                        print(debug_msg)
+                        # Also write to log file
+                        try:
+                            with open('simple_posture.log', 'a') as f:
+                                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                        except:
+                            pass
+                        try:
+                            play_ding()  # Play ding sound
+                            engine.say("Please sit up straight!")
+                            engine.runAndWait()
+                        except Exception as e:
+                            print(f"Voice alert error: {e}")
                         last_announcement_time = current_time
                     
-                    # Continuous announcements every ANNOUNCEMENT_INTERVAL seconds
-                    elif (current_time - last_announcement_time) >= ANNOUNCEMENT_INTERVAL:
-                        play_ding()  # Play ding sound
-                        engine.say("Please sit up straight!")
-                        engine.runAndWait()
+                    # Continuous announcements every ANNOUNCEMENT_INTERVAL seconds (only after initial alert)
+                    elif last_announcement_time > 0 and (current_time - last_announcement_time) >= ANNOUNCEMENT_INTERVAL:
+                        debug_msg = f"DEBUG: Continuous alert triggered after {current_time - last_announcement_time:.1f} seconds"
+                        print(debug_msg)
+                        try:
+                            with open('simple_posture.log', 'a') as f:
+                                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                        except:
+                            pass
+                        try:
+                            play_ding()  # Play ding sound
+                            engine.say("Please sit up straight!")
+                            engine.runAndWait()
+                        except Exception as e:
+                            print(f"Voice alert error: {e}")
                         last_announcement_time = current_time
                     
-                    # Check if bad posture has lasted for the configured threshold
-                    if elapsed >= BAD_POSTURE_DURATION_THRESHOLD and not bad_posture_alerted:
-                        play_ding()  # Play ding sound
-                        engine.say("stand up")
-                        engine.runAndWait()
-                        bad_posture_alerted = True
+                    # Note: "stand up" announcement moved to sitting timer section
                 else:
                     bad_posture_frames = 0
                     bad_posture_start_time = None
                     bad_posture_alerted = False
             else:
+                # No pose detected - reset all bad posture tracking
                 bad_posture_frames = 0
                 bad_posture_start_time = None
                 bad_posture_alerted = False
+                last_announcement_time = 0  # Reset announcement timer as well
+                
+                # Only reset sitting alert if person has been away for a long time (more than 30 seconds)
+                # This prevents resetting the alert due to brief pose detection failures
+                if last_pose_time and (current_time - last_pose_time) > 30:
+                    sitting_alerted = False
+                    debug_msg = f"DEBUG: Sitting alert reset after being away for {current_time - last_pose_time:.1f} seconds"
+                    print(debug_msg)
+                    try:
+                        with open('simple_posture.log', 'a') as f:
+                            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                    except:
+                        pass
 
             # Check sitting timer (only when actually sitting)
             if sitting_start_time is not None:
                 sitting_elapsed = time.time() - sitting_start_time
                 if sitting_elapsed >= SITTING_DURATION_THRESHOLD and not sitting_alerted:
-                    play_ding()  # Play ding sound
-                    minutes = SITTING_DURATION_THRESHOLD // 60
-                    engine.say(f"you've been sitting for {minutes} minutes, take a rest")
-                    engine.runAndWait()
+                    debug_msg = f"DEBUG: Stand up alert triggered after {sitting_elapsed:.1f} seconds (threshold: {SITTING_DURATION_THRESHOLD})"
+                    print(debug_msg)
+                    try:
+                        with open('simple_posture.log', 'a') as f:
+                            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+                    except:
+                        pass
+                    try:
+                        play_ding()  # Play ding sound
+                        engine.say("stand up")
+                        engine.runAndWait()
+                    except Exception as e:
+                        print(f"Voice alert error: {e}")
                     sitting_alerted = True
             else:
                 sitting_elapsed = 0  # Timer is paused
+
+            # Draw posture metrics if pose is detected
+            if results.pose_landmarks:
+                draw_posture_metrics(image, measurements, calibrator.personalized_thresholds, bad_reasons if 'bad_reasons' in locals() else None)
 
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)

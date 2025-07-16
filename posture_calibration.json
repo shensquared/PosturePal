@@ -2,93 +2,72 @@
   "good_examples": [
     {
       "measurements": {
-        "slouching": -1.026964396238327,
-        "forward_head": 0.18396294116973877
+        "head_height": 0.2598986029624939,
+        "nose_height_in_frame": 0.5741149187088013
       },
-      "timestamp": 1752351538.118902
+      "timestamp": 1752638696.905807
     },
     {
       "measurements": {
-        "slouching": -1.0420904159545898,
-        "forward_head": 0.14718586206436157
+        "head_height": 0.22342082858085632,
+        "nose_height_in_frame": 0.5941780209541321
       },
-      "timestamp": 1752351543.265866
+      "timestamp": 1752638698.4869928
     },
     {
       "measurements": {
-        "slouching": -0.9893896877765656,
-        "forward_head": 0.10740858316421509
+        "head_height": 0.24099570512771606,
+        "nose_height_in_frame": 0.5789182186126709
       },
-      "timestamp": 1752351545.5763898
+      "timestamp": 1752638700.664385
     },
     {
       "measurements": {
-        "slouching": -1.0090875923633575,
-        "forward_head": 0.10904735326766968
+        "head_height": 0.19927793741226196,
+        "nose_height_in_frame": 0.6244466304779053
       },
-      "timestamp": 1752351552.839298
+      "timestamp": 1752638805.106522
     },
     {
       "measurements": {
-        "slouching": -0.9642069339752197,
-        "forward_head": 0.14141082763671875
+        "head_height": 0.22862520813941956,
+        "nose_height_in_frame": 0.5925573110580444
       },
-      "timestamp": 1752351558.383028
-    },
-    {
-      "measurements": {
-        "slouching": -0.9096068143844604,
-        "forward_head": 0.1031445562839508
-      },
-      "timestamp": 1752351559.3381429
-    },
-    {
-      "measurements": {
-        "slouching": -0.9002050459384918,
-        "forward_head": 0.08208727836608887
-      },
-      "timestamp": 1752351560.294778
-    },
-    {
-      "measurements": {
-        "slouching": -0.9971914291381836,
-        "forward_head": 0.12186947464942932
-      },
-      "timestamp": 1752351563.693383
-    },
-    {
-      "measurements": {
-        "slouching": -1.0389322340488434,
-        "forward_head": 0.22613167762756348
-      },
-      "timestamp": 1752351648.4060328
+      "timestamp": 1752638810.285941
     }
   ],
   "bad_examples": [
     {
       "measurements": {
-        "slouching": -1.0863236486911774,
-        "forward_head": 0.1813337802886963
+        "head_height": 0.18733859062194824,
+        "nose_height_in_frame": 0.649624764919281
       },
-      "timestamp": 1752351576.266651
+      "timestamp": 1752638703.73388
     },
     {
       "measurements": {
-        "slouching": -1.082183688879013,
-        "forward_head": 0.17940184473991394
+        "head_height": 0.19147247076034546,
+        "nose_height_in_frame": 0.6464130282402039
       },
-      "timestamp": 1752351578.212842
+      "timestamp": 1752638708.915124
     },
     {
       "measurements": {
-        "slouching": -1.0919647812843323,
-        "forward_head": 0.21761387586593628
+        "head_height": 0.2013821303844452,
+        "nose_height_in_frame": 0.6213520765304565
       },
-      "timestamp": 1752351640.552187
+      "timestamp": 1752638711.3238988
+    },
+    {
+      "measurements": {
+        "head_height": 0.20055100321769714,
+        "nose_height_in_frame": 0.6314470767974854
+      },
+      "timestamp": 1752638817.084909
     }
   ],
   "thresholds": {
-    "slouching_threshold": 0.15,
-    "forward_head_threshold": 0.15
+    "head_height_threshold": 0.21281485259532928,
+    "nose_height_threshold": 0.6150261282920837
   }
 }

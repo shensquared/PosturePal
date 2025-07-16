@@ -144,9 +144,36 @@ def start_posture_detection():
     subprocess.run(['pkill', '-f', 'pose_webcam.py'], capture_output=True)
     subprocess.run(['pkill', '-f', 'simple_posture_launcher.sh'], capture_output=True)
     
-    # Start the launcher
-    subprocess.Popen(['/bin/bash', 'simple_posture_launcher.sh'])
-    print("✅ Posture detection started")
+    # Start the launcher in background with proper output redirection
+    launcher_path = os.path.abspath('simple_posture_launcher.sh')
+    log_file = os.path.abspath('simple_posture.log')
+    
+    # Use nohup to ensure the process continues even if parent exits
+    # Create the command as a string for shell execution
+    cmd = f"nohup /bin/bash {launcher_path} > {log_file} 2>&1 &"
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # Give it a moment to start
+    import time
+    time.sleep(1)
+    
+    # Check if it's running
+    if is_posture_detection_running():
+        print("✅ Posture detection started")
+    else:
+        print("❌ Failed to start posture detection")
+        return False
+    
+    return True
+
+def is_posture_detection_running():
+    """Check if posture detection is running"""
+    try:
+        result = subprocess.run(['pgrep', '-f', 'pose_webcam.py'], 
+                              capture_output=True, text=True)
+        return result.returncode == 0
+    except:
+        return False
 
 def stop_posture_detection():
     """Stop posture detection"""

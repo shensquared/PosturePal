@@ -59,7 +59,9 @@ def main():
             # Create GUI elements
             self.create_widgets()
             
-            # No longer need status update thread since we removed status section
+            # Set up periodic status updates
+            self.update_button_states()
+            self.root.after(5000, self.periodic_status_check)  # Check every 5 seconds
         
         def create_widgets(self):
             """Create all GUI widgets"""
@@ -227,6 +229,12 @@ def main():
                 self.start_btn.config(state="normal")
                 self.stop_btn.config(state="disabled")
         
+        def periodic_status_check(self):
+            """Periodically check and update status"""
+            self.update_button_states()
+            # Schedule next check
+            self.root.after(5000, self.periodic_status_check)
+        
         def toggle_auto_start(self):
             """Toggle auto-start on login"""
             self.config['auto_start_enabled'] = self.auto_start_var.get()
@@ -281,8 +289,11 @@ def main():
             result = run_venv_command(['config_manager.py', '--start'])
             if result.returncode == 0:
                 self.log_message("✅ Posture detection started")
+                # Update button states after a short delay to allow process to start
+                self.root.after(2000, self.update_button_states)
             else:
                 self.log_message(f"❌ Error: {result.stderr}")
+                self.log_message("Try running calibration first to ensure camera works")
             self.update_button_states()
         
         def stop_posture_detection(self):
@@ -298,7 +309,10 @@ def main():
         def run_calibration(self):
             """Run calibration mode"""
             self.log_message("Starting calibration mode...")
-            result = run_venv_command(['pose_webcam.py', '--calibrate'])
+            # Get the current camera index from config
+            camera_index = self.config.get('camera_index', 0)
+            self.log_message(f"Using camera index {camera_index} from configuration")
+            result = run_venv_command(['pose_webcam.py', '--calibrate', '--camera-index', str(camera_index)])
             if result.returncode == 0:
                 self.log_message("✅ Calibration mode started")
             else:
