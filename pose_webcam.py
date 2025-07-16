@@ -770,29 +770,9 @@ def run_normal_mode(cam_index):
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
-            # Add enhanced close button and instructions
+            # Add simple instructions at the bottom
             h, w = image.shape[:2]
-            
-            # Draw a prominent QUIT button in the top-right corner
-            button_width = 120
-            button_height = 40
-            button_x = w - button_width - 20
-            button_y = 20
-            
-            # Draw button background
-            cv2.rectangle(image, (button_x, button_y), (button_x + button_width, button_y + button_height), 
-                         (0, 0, 255), -1)  # Red background
-            cv2.rectangle(image, (button_x, button_y), (button_x + button_width, button_y + button_height), 
-                         (255, 255, 255), 2)  # White border
-            
-            # Draw button text
-            cv2.putText(image, "QUIT", (button_x + 35, button_y + 28), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            
-            # Add instructions at the bottom
-            cv2.putText(image, "Press 'q' to quit or click the QUIT button", (10, h - 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-            cv2.putText(image, "Use the red X button in window title bar to close", (10, h - 20), 
+            cv2.putText(image, "Press 'q' to quit", (10, h - 20), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
             # Show the image (landscape)
@@ -809,9 +789,7 @@ def run_normal_mode(cam_index):
                 print("Window closed by user (red X button)")
                 break
             
-            # Check for mouse clicks on the QUIT button
-            # Note: OpenCV mouse events require a callback, but we can detect window close as alternative
-            # The QUIT button is visual only - users can click the red X in the title bar
+
 
         cap.release()
         cv2.destroyAllWindows()
