@@ -101,13 +101,13 @@ def main():
             toggle_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 20))  # More space below
             
             self.auto_start_var = tk.BooleanVar(value=self.config.get('auto_start_enabled', False))
-            auto_start_check = ttk.Checkbutton(toggle_frame, text="Auto-start on login", 
+            auto_start_check = ttk.Checkbutton(toggle_frame, text="Start automatically on login", 
                                               variable=self.auto_start_var, 
                                               command=self.toggle_auto_start)
             auto_start_check.grid(row=0, column=0, sticky=tk.W, pady=2)
             
             self.monitor_var = tk.BooleanVar(value=self.config.get('monitor_detection_enabled', False))
-            monitor_check = ttk.Checkbutton(toggle_frame, text="Pause when monitor is off", 
+            monitor_check = ttk.Checkbutton(toggle_frame, text="Pause app when user is idle (2+ min)", 
                                            variable=self.monitor_var, 
                                            command=self.toggle_monitor_detection)
             monitor_check.grid(row=1, column=0, sticky=tk.W, pady=2)
@@ -260,13 +260,13 @@ def main():
             save_config(self.config)
         
         def toggle_monitor_detection(self):
-            """Toggle monitor detection feature"""
+            """Toggle user idle detection feature"""
             self.config['monitor_detection_enabled'] = self.monitor_var.get()
             
             if self.config['monitor_detection_enabled']:
-                self.log_message("✅ Monitor detection enabled")
+                self.log_message("✅ User idle detection enabled (pauses after 2+ min inactive)")
             else:
-                self.log_message("✅ Monitor detection disabled")
+                self.log_message("✅ User idle detection disabled")
             
             save_config(self.config)
         

@@ -25,6 +25,29 @@ DEFAULT_CONFIG = {
     "processing_fps": 10   # Process every Nth frame instead of every frame
 }
 
+def is_user_active():
+    """Check if the user is currently active (not idle)"""
+    try:
+        # Use IOHIDSystem to get user idle time on macOS
+        result = subprocess.run(['ioreg', '-c', 'IOHIDSystem'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                if 'HIDIdleTime' in line:
+                    # Extract the idle time value (in nanoseconds)
+                    import re
+                    match = re.search(r'HIDIdleTime\s*=\s*(\d+)', line)
+                    if match:
+                        idle_time_ns = int(match.group(1))
+                        idle_time_seconds = idle_time_ns / 1_000_000_000  # Convert to seconds
+                        
+                        # Consider user inactive if idle for more than 2 minutes (120 seconds)
+                        return idle_time_seconds < 120
+        return True  # Default to True if we can't determine
+    except Exception as e:
+        print(f"User activity detection error: {e}")
+        return True  # Default to True on error
+
 def load_config():
     """Load configuration from file"""
     if os.path.exists(CONFIG_FILE):
@@ -615,6 +638,14 @@ def run_normal_mode(cam_index):
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # Check user activity if monitor detection is enabled
+            if config['monitor_detection_enabled']:
+                user_active = is_user_active()
+                if not user_active:
+                    # User is idle - pause detection
+                    time.sleep(1)  # Sleep for 1 second before checking again
+                    continue  # Skip this frame and continue loop
 
             # Flip the frame horizontally (mirror effect)
             frame = cv2.flip(frame, 1)

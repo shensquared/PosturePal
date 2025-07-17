@@ -1,191 +1,178 @@
-# SitStraight - Posture Detection System
+# SitStraight - Posture Detection for macOS
 
-A smart posture detection system that helps you maintain good sitting posture and reminds you to take breaks.
+A smart posture detection system that uses your webcam to monitor your sitting posture and provides voice alerts to help you maintain good posture and take regular breaks.
 
-## Features
+## ✨ Features
 
-- **Real-time posture detection** using MediaPipe
-- **Personalized calibration** for your specific posture
-- **Configurable alerts** with adjustable timing
-- **Sitting timer** with visual progress bar (20-minute default)
-- **Voice conflict resolution** - prevents overlapping alerts
-- **Mirrored camera view** for natural interaction
-- **Auto-start on login** (optional)
-- **Monitor detection** (optional - pauses when monitor is off)
-- **Continuous voice alerts** until posture improves
-- **Hidden dock icons** for clean desktop experience (menu bar and posture detection)
-- **Enhanced window controls** with always-on-top
-- **Menu bar integration** for easy access to controls
-- **Multiple ways to quit** (keyboard, window close, menu bar)
+- **Real-time Posture Detection**: Uses MediaPipe to detect your sitting posture through your webcam
+- **Voice Alerts**: Speaks "sit straight" when you slouch and "please stand up" after 20 minutes of sitting
+- **Menu Bar Interface**: Clean macOS menu bar app for easy control
+- **Mirrored Camera View**: See yourself like a mirror during calibration
+- **Smart Voice Queue**: Prevents overlapping voice announcements
+- **Configurable Settings**: Adjust camera, timing, and alert preferences
+- **Auto-start Option**: Can start automatically when you log in
+- **User Idle Detection**: Automatically pauses when user is inactive for 2+ minutes, resumes when active
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 ```bash
 # Create and activate virtual environment
-python3.10 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
+# Install required packages
 pip install -r requirements.txt
 ```
 
-### 2. Calibrate Your Posture
+### 2. Start the Menu Bar App
 ```bash
-python pose_webcam.py --calibrate
-```
-Follow the on-screen instructions to add good and bad posture examples.
-
-### 3. Start Posture Detection
-```bash
-python pose_webcam.py --camera-index 2
+./start.sh
 ```
 
-## Configuration Management
+That's it! The SitStraight menu bar icon will appear in your macOS menu bar.
 
-### GUI Configuration (Recommended)
-For easy configuration through a graphical interface:
+## 🎯 How to Use
 
-```bash
-python run_gui.py
-```
+### Menu Bar Controls
+- **Status Indicator**: Shows if posture detection is running (🟢 Running / 🔴 Stopped)
+- **Start Posture Detection**: Begin monitoring your posture
+- **Stop Posture Detection**: Stop monitoring
+- **Open Settings**: Configure camera, timing, and other preferences
+- **Run Calibration**: Set up your good posture position
+- **Quit SitStraight**: Stop everything and quit the menu bar app
 
-The GUI provides:
-- ✅ **Real-time status** of all features
-- 🎛️ **Easy toggles** for auto-start and monitor detection
-- ⚙️ **Adjustable settings** with spinboxes and sliders
-- 🎮 **One-click controls** to start/stop posture detection
-- 📝 **Activity log** showing recent actions
-- 🔧 **Calibration launcher** for posture training
+### First Time Setup
+1. Run `./start.sh` to launch the menu bar
+2. Click **"Run Calibration"** to set up your good posture position
+3. Click **"Start Posture Detection"** to begin monitoring
+4. Use **"Open Settings"** to adjust camera index if needed
 
-### Menu Bar Integration
-For quick access to controls from the macOS menu bar:
+## ⚙️ Configuration
 
-```bash
-./start_menu_bar.sh
-```
+### Settings (via Menu Bar → Open Settings)
+- **Camera Index**: Which camera to use (default: 2)
+- **Sitting Duration**: Minutes before "stand up" alert (default: 20 minutes)
+- **Bad Posture Duration**: Seconds of slouching before "sit straight" alert (default: 60 seconds)
+- **Alert Duration**: How long voice alerts play (default: 5 seconds)
+- **Announcement Interval**: Time between repeated alerts (default: 5 seconds)
+- **Start automatically on login**: Start posture detection when you log into your Mac
+- **Pause when user is idle**: Automatically pause when user is inactive for 2+ minutes
 
-The menu bar app provides:
-- 🪑 **SitStraight icon** in the menu bar
-- 🟢 **Real-time status** indicator (Running/Stopped)
-- ⚡ **Quick start/stop** controls
-- ⚙️ **Easy access** to settings and calibration
-- 🔔 **System notifications** for status changes
+### Camera Setup
+If the default camera (index 2) doesn't work:
+1. Open Settings from the menu bar
+2. Try different camera indices (0, 1, 2, etc.)
+3. Click "Save Settings"
+4. Restart posture detection
 
-### Command Line Configuration
-For advanced users or scripting:
+## 🔧 Troubleshooting
 
-#### Show Current Configuration
-```bash
-python config_manager.py --show
-```
+### Voice Alerts Not Playing
+- Check your system volume
+- Ensure microphone permissions are granted
+- Try restarting posture detection from the menu bar
 
-#### Toggle Auto-Start on Login
-```bash
-python config_manager.py --toggle-auto-start
-```
+### Camera Not Working
+- Try different camera indices in Settings
+- Check camera permissions in System Preferences
+- Ensure no other app is using the camera
 
-#### Toggle Monitor Detection
-```bash
-python config_manager.py --toggle-monitor
-```
+### Menu Bar Not Appearing
+- Check if the script has execute permissions: `chmod +x start.sh`
+- Look for error messages in `menu_bar.log`
+- Try running manually: `python3 menu_bar_controller.py`
 
-#### Start/Stop Posture Detection
-```bash
-python config_manager.py --start
-python config_manager.py --stop
-```
+### Posture Detection Issues
+- Run calibration again to reset your good posture position
+- Check `simple_posture.log` for error messages
+- Ensure good lighting for camera detection
 
-#### Adjust Alert Duration
-```bash
-python config_manager.py --alert-duration 3.0  # 3 seconds
-```
-
-#### Change Camera Index
-```bash
-python config_manager.py --camera 2  # Use camera index 2
-```
-
-## Configuration Options
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `auto_start_enabled` | `false` | Start automatically on login |
-| `monitor_detection_enabled` | `true` | Pause when monitor is off |
-| `alert_duration_seconds` | `4.0` | Time before first bad posture alert |
-| `camera_index` | `2` | Camera device to use |
-| `sitting_duration_threshold` | `1200` | Sitting time before "stand up" alert (20 min) |
-| `bad_posture_duration_threshold` | `10` | Bad posture time before voice alert |
-| `announcement_interval` | `10` | Seconds between continuous alerts |
-
-## Recent Improvements
-
-### Voice Conflict Resolution
-- **Smart voice queue** prevents overlapping "sit straight" and "stand up" alerts
-- **Reliable 20-minute alerts** - you'll always hear the "stand up" announcement
-- **No more missed alerts** due to voice engine conflicts
-
-### Enhanced User Experience
-- **Mirrored camera view** - natural webcam-like interaction
-- **20-minute sitting timer** - optimal break frequency
-- **Cleaner interface** - removed unnecessary on-screen instructions
-- **Improved audio system** - fresh voice engine for each alert
-
-### Workspace Cleanup
-- **Removed temporary files** and old logs
-- **Streamlined codebase** with better organization
-- **Updated configuration** with optimal defaults
-
-## Troubleshooting
-
-### Camera Issues
-- Try different camera indices: `python pose_webcam.py --camera-index 1`
-- Check camera permissions in System Settings
-- Default camera index is 2 (UGREEN Camera 4K)
-
-### Performance Issues
-- Reduce frame rate by adjusting camera settings
-- Close other applications using the camera
-
-### Audio Issues
-- Check system volume and audio output settings
-- Ensure text-to-speech is enabled in macOS
-- Voice alerts include both ding sound and spoken message
-
-### Voice Alert Not Working
-- The system now uses a smart voice queue to prevent conflicts
-- If you don't hear alerts, check system audio settings
-- Test audio with: `python test_audio.py` (if available)
-
-## File Structure
+## 📁 File Structure
 
 ```
 sitstraight/
-├── pose_webcam.py              # Main posture detection script
-├── run_gui.py                  # GUI configuration interface
-├── menu_bar_controller.py      # Menu bar integration
-├── start_menu_bar.sh           # Menu bar launcher script
-├── config_manager.py           # Command-line configuration tool
-├── config.json                 # Configuration file
-├── posture_calibration.json    # Personalized calibration data
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+├── start.sh                    # Launch the menu bar app
+├── pose_webcam.py             # Core posture detection engine
+├── menu_bar_controller.py     # Menu bar interface
+├── config_manager.py          # Configuration management
+├── run_gui.py                 # Settings GUI
+├── simple_posture_launcher.sh # Posture detection launcher
+├── config.json                # Configuration file
+├── requirements.txt           # Python dependencies
+└── README.md                  # This file
 ```
 
-## Requirements
+## 🎮 Voice Commands
 
-- macOS 10.15 or later
-- Python 3.10
-- Webcam (UGREEN Camera 4K recommended)
+The system provides two types of voice alerts:
+
+1. **"Sit straight"** - Triggered when you slouch for 60 seconds
+2. **"Please stand up"** - Triggered after sitting for 20 minutes
+
+Voice alerts are queued to prevent overlapping announcements and ensure clear audio playback.
+
+## 🔄 Auto-start & User Idle Detection
+
+### Auto-start on Login
+To enable auto-start on login:
+1. Open Settings from the menu bar
+2. Check "Start automatically on login"
+3. The system will create a macOS LaunchAgent
+
+To disable auto-start:
+1. Open Settings from the menu bar
+2. Uncheck "Start automatically on login"
+
+### User Idle Detection
+To pause detection when you're away from your computer:
+1. Open Settings from the menu bar
+2. Check "Pause when user is idle (2+ min)"
+3. Detection will automatically pause when you're inactive for 2+ minutes and resume when you return
+
+Both features work together - you can have auto-start enabled and idle detection enabled for optimal behavior.
+
+## 📝 Logs
+
+- `menu_bar.log` - Menu bar app activity
+- `simple_posture.log` - Posture detection activity
+- `~/Library/Logs/sitstraight.log` - Auto-start logs (if enabled)
+
+## 🛠️ Development
+
+### Running Components Separately
+```bash
+# Run posture detection directly
+python3 pose_webcam.py
+
+# Run menu bar only
+python3 menu_bar_controller.py
+
+# Run settings GUI only
+python3 run_gui.py
+
+# Manage configuration
+python3 config_manager.py --show
+```
+
+### Virtual Environment
+The system uses a virtual environment (`.venv/`) to manage dependencies. Always activate it before running:
+```bash
+source .venv/bin/activate
+```
+
+## 📋 Requirements
+
+- macOS 10.14 or later
+- Python 3.8+
+- Webcam
 - Microphone (for voice alerts)
 
-## Usage Tips
+## 🤝 Contributing
 
-1. **First Time Setup**: Run calibration to personalize posture detection
-2. **Daily Use**: Start via menu bar for easy access
-3. **Customization**: Use GUI settings to adjust timing and camera
-4. **Monitoring**: Check the visual progress bar for sitting time
-5. **Breaks**: Stand up when you hear the 20-minute alert
+Feel free to submit issues and enhancement requests!
 
-The system will help you maintain good posture and take regular breaks for better health!
+## 📄 License
+
+This project is open source and available under the MIT License.
  
