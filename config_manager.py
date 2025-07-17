@@ -48,7 +48,7 @@ def save_config(config):
 
 def show_config(config):
     """Display current configuration"""
-    print("\n=== SitStraight Configuration ===")
+    print("\n=== PosturePal Configuration ===")
     print(f"Auto-start on login: {'✅ Enabled' if config['auto_start_enabled'] else '❌ Disabled'}")
     print(f"Monitor detection: {'✅ Enabled' if config['monitor_detection_enabled'] else '❌ Disabled'}")
     print(f"Alert duration: {config['alert_duration_seconds']} seconds")
@@ -67,15 +67,15 @@ def toggle_auto_start():
         print("Enabling auto-start on login...")
         # Create and load LaunchAgent
         create_launch_agent()
-        subprocess.run(['launchctl', 'load', os.path.expanduser('~/Library/LaunchAgents/com.sitstraight.posture.plist')])
+        subprocess.run(['launchctl', 'load', os.path.expanduser('~/Library/LaunchAgents/com.posturepal.posture.plist')])
         print("✅ Auto-start enabled")
     else:
         print("Disabling auto-start on login...")
         # Unload and remove LaunchAgent
-        subprocess.run(['launchctl', 'unload', os.path.expanduser('~/Library/LaunchAgents/com.sitstraight.posture.plist')], 
+        subprocess.run(['launchctl', 'unload', os.path.expanduser('~/Library/LaunchAgents/com.posturepal.posture.plist')], 
                       capture_output=True)
         try:
-            os.remove(os.path.expanduser('~/Library/LaunchAgents/com.sitstraight.posture.plist'))
+            os.remove(os.path.expanduser('~/Library/LaunchAgents/com.posturepal.posture.plist'))
         except FileNotFoundError:
             pass
         print("✅ Auto-start disabled")
@@ -103,7 +103,7 @@ def create_launch_agent():
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.sitstraight.posture</string>
+    <string>com.posturepal.posture</string>
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
@@ -114,9 +114,9 @@ def create_launch_agent():
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>{os.path.expanduser('~/Library/Logs/sitstraight.log')}</string>
+    <string>{os.path.expanduser('~/Library/Logs/posturepal.log')}</string>
     <key>StandardErrorPath</key>
-    <string>{os.path.expanduser('~/Library/Logs/sitstraight.log')}</string>
+    <string>{os.path.expanduser('~/Library/Logs/posturepal.log')}</string>
     <key>LSUIElement</key>
     <true/>
     <key>HideDockIcon</key>
@@ -129,7 +129,7 @@ def create_launch_agent():
     os.makedirs(launch_agents_dir, exist_ok=True)
     
     # Write plist file
-    plist_path = os.path.join(launch_agents_dir, 'com.sitstraight.posture.plist')
+    plist_path = os.path.join(launch_agents_dir, 'com.posturepal.posture.plist')
     with open(plist_path, 'w') as f:
         f.write(plist_content)
     
@@ -183,7 +183,7 @@ def stop_posture_detection():
     print("✅ Posture detection stopped")
 
 def main():
-    parser = argparse.ArgumentParser(description='SitStraight Configuration Manager')
+    parser = argparse.ArgumentParser(description='PosturePal Configuration Manager')
     parser.add_argument('--show', action='store_true', help='Show current configuration')
     parser.add_argument('--toggle-auto-start', action='store_true', help='Toggle auto-start on login')
     parser.add_argument('--toggle-monitor', action='store_true', help='Toggle monitor detection')

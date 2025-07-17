@@ -79,7 +79,7 @@ def main():
             main_frame.grid_columnconfigure(1, weight=1)
             
             # Title
-            title_label = ttk.Label(main_frame, text="SitStraight Configuration", 
+            title_label = ttk.Label(main_frame, text="PosturePal Configuration", 
                                    font=("Arial", 16, "bold"))
             title_label.grid(row=0, column=0, columnspan=2, pady=(0, 30))
             

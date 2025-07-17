@@ -1,4 +1,4 @@
-# SitStraight - Posture Detection for macOS
+# PosturePal - Posture Detection for macOS
 
 A smart posture detection system that uses your webcam to monitor your sitting posture and provides voice alerts to help you maintain good posture and take regular breaks.
 
@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ./start.sh
 ```
 
-That's it! The SitStraight menu bar icon will appear in your macOS menu bar.
+That's it! The PosturePal menu bar icon will appear in your macOS menu bar.
 
 ## 🎯 How to Use
 
@@ -40,7 +40,7 @@ That's it! The SitStraight menu bar icon will appear in your macOS menu bar.
 - **Stop Posture Detection**: Stop monitoring
 - **Open Settings**: Configure camera, timing, and other preferences
 - **Run Calibration**: Set up your good posture position
-- **Quit SitStraight**: Stop everything and quit the menu bar app
+- **Quit PosturePal**: Stop everything and quit the menu bar app
 
 ### First Time Setup
 1. Run `./start.sh` to launch the menu bar
@@ -91,7 +91,7 @@ If the default camera (index 2) doesn't work:
 ## 📁 File Structure
 
 ```
-sitstraight/
+posturepal/
 ├── start.sh                    # Launch the menu bar app
 ├── pose_webcam.py             # Core posture detection engine
 ├── menu_bar_controller.py     # Menu bar interface
@@ -136,7 +136,7 @@ Both features work together - you can have auto-start enabled and idle detection
 
 - `menu_bar.log` - Menu bar app activity
 - `simple_posture.log` - Posture detection activity
-- `~/Library/Logs/sitstraight.log` - Auto-start logs (if enabled)
+- `~/Library/Logs/posturepal.log` - Auto-start logs (if enabled)
 
 ## 🛠️ Development
 

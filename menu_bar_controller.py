@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Menu Bar Controller for SitStraight
+Menu Bar Controller for PosturePal
 Provides easy access to posture detection controls from the macOS menu bar
 """
 
@@ -64,9 +64,9 @@ def stop_posture_detection():
         print(f"Error stopping posture detection: {e}")
         return False
 
-class SitStraightMenuBar(rumps.App):
+class PosturePalMenuBar(rumps.App):
     def __init__(self):
-        super().__init__("SitStraight", quit_button=None)
+        super().__init__("PosturePal", quit_button=None)
         self.config = load_config()
         self.setup_menu()
         
@@ -86,7 +86,7 @@ class SitStraightMenuBar(rumps.App):
         self.calibrate_item = rumps.MenuItem("Run Calibration", callback=self.run_calibration)
         
         # Quit
-        self.quit_item = rumps.MenuItem("Quit SitStraight", callback=self.quit_app)
+        self.quit_item = rumps.MenuItem("Quit PosturePal", callback=self.quit_app)
         
         # Add all items to the menu
         self.menu = [
@@ -120,13 +120,13 @@ class SitStraightMenuBar(rumps.App):
         """Start posture detection"""
         if start_posture_detection():
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Posture Detection Started",
                 message="Posture detection is now running in the background."
             )
         else:
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Error",
                 message="Failed to start posture detection. Check the logs."
             )
@@ -135,13 +135,13 @@ class SitStraightMenuBar(rumps.App):
         """Stop posture detection"""
         if stop_posture_detection():
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Posture Detection Stopped",
                 message="Posture detection has been stopped."
             )
         else:
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Error",
                 message="Failed to stop posture detection."
             )
@@ -152,7 +152,7 @@ class SitStraightMenuBar(rumps.App):
             subprocess.Popen([sys.executable, 'run_gui.py'])
         except Exception as e:
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Error",
                 message=f"Failed to open settings: {e}"
             )
@@ -165,7 +165,7 @@ class SitStraightMenuBar(rumps.App):
             subprocess.Popen([sys.executable, 'pose_webcam.py', '--calibrate', '--camera-index', str(camera_index)])
         except Exception as e:
             rumps.notification(
-                title="SitStraight",
+                title="PosturePal",
                 subtitle="Error",
                 message=f"Failed to start calibration: {e}"
             )
@@ -196,7 +196,7 @@ def main():
             # AppKit not available, use alternative method
             pass
     
-    app = SitStraightMenuBar()
+    app = PosturePalMenuBar()
     app.run()
 
 if __name__ == "__main__":
