@@ -1,9 +1,9 @@
 {
   "auto_start_enabled": false,
   "monitor_detection_enabled": true,
-  "alert_duration_seconds": 8.0,
+  "alert_duration_seconds": 4.0,
   "camera_index": 2,
-  "sitting_duration_threshold": 1800,
+  "sitting_duration_threshold": 1200,
   "bad_posture_duration_threshold": 10,
-  "announcement_interval": 15
+  "announcement_interval": 10
 }

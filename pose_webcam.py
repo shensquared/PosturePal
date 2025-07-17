@@ -74,6 +74,28 @@ def play_ding():
         except Exception as e2:
             print(f"Could not play ding sound: {e}, {e2}")
 
+def safe_speak(engine, message, voice_busy, last_voice_time):
+    """Safely speak a message, avoiding conflicts with other voice announcements"""
+    current_time = time.time()
+    
+    # If voice is busy or too soon after last announcement, skip this one
+    if voice_busy or (current_time - last_voice_time) < 2.0:
+        return voice_busy, last_voice_time
+    
+    try:
+        voice_busy = True
+        play_ding()  # Play ding sound
+        engine.say(message)
+        engine.runAndWait()
+        time.sleep(0.5)  # Short pause to ensure audio plays
+        last_voice_time = current_time
+        voice_busy = False
+        return voice_busy, last_voice_time
+    except Exception as e:
+        print(f"Voice alert error: {e}")
+        voice_busy = False
+        return voice_busy, last_voice_time
+
 # Calibration system
 
 class PostureCalibrator:
@@ -266,6 +288,9 @@ def run_calibration_mode(cam_index):
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # Flip the frame horizontally (mirror effect)
+            frame = cv2.flip(frame, 1)
 
             # Convert the BGR image to RGB
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -489,6 +514,10 @@ def run_normal_mode(cam_index):
     # Set volume and rate for better audio
     engine.setProperty('volume', 1.0)  # Maximum volume (0.0 to 1.0)
     engine.setProperty('rate', 150)     # Slightly slower for clarity
+    
+    # Voice queue to prevent conflicts
+    voice_busy = False
+    last_voice_time = 0
 
     # Initialize calibrator for personalized thresholds
     calibrator = PostureCalibrator()
@@ -548,7 +577,7 @@ def run_normal_mode(cam_index):
     ANNOUNCEMENT_INTERVAL = config['announcement_interval']  # Announce every N seconds when bad posture continues
     
     # Sitting timer logic
-    sitting_start_time = time.time()
+    sitting_start_time = None  # Will be set when pose is first detected
     sitting_alerted = False
     SITTING_DURATION_THRESHOLD = config['sitting_duration_threshold']  # seconds
     total_sitting_time = 0  # Track total actual sitting time
@@ -586,6 +615,9 @@ def run_normal_mode(cam_index):
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # Flip the frame horizontally (mirror effect)
+            frame = cv2.flip(frame, 1)
 
             # Convert the BGR image to RGB
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -693,12 +725,7 @@ def run_normal_mode(cam_index):
                                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                         except:
                             pass
-                        try:
-                            play_ding()  # Play ding sound
-                            engine.say("Please sit up straight!")
-                            engine.runAndWait()
-                        except Exception as e:
-                            print(f"Voice alert error: {e}")
+                        voice_busy, last_voice_time = safe_speak(engine, "Please sit up straight!", voice_busy, last_voice_time)
                         last_announcement_time = current_time
                     
                     # Continuous announcements every ANNOUNCEMENT_INTERVAL seconds (only after initial alert)
@@ -710,12 +737,7 @@ def run_normal_mode(cam_index):
                                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                         except:
                             pass
-                        try:
-                            play_ding()  # Play ding sound
-                            engine.say("Please sit up straight!")
-                            engine.runAndWait()
-                        except Exception as e:
-                            print(f"Voice alert error: {e}")
+                        voice_busy, last_voice_time = safe_speak(engine, "Please sit up straight!", voice_busy, last_voice_time)
                         last_announcement_time = current_time
                     
                     # Note: "stand up" announcement moved to sitting timer section
@@ -753,12 +775,7 @@ def run_normal_mode(cam_index):
                             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                     except:
                         pass
-                    try:
-                        play_ding()  # Play ding sound
-                        engine.say("stand up")
-                        engine.runAndWait()
-                    except Exception as e:
-                        print(f"Voice alert error: {e}")
+                    voice_busy, last_voice_time = safe_speak(engine, "stand up", voice_busy, last_voice_time)
                     sitting_alerted = True
             else:
                 sitting_elapsed = 0  # Timer is paused
@@ -770,10 +787,10 @@ def run_normal_mode(cam_index):
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
-            # Add simple instructions at the bottom
-            h, w = image.shape[:2]
-            cv2.putText(image, "Press 'q' to quit", (10, h - 20), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # Remove the 'Press q to quit' instruction
+            # h, w = image.shape[:2]
+            # cv2.putText(image, "Press 'q' to quit", (10, h - 20), 
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
             # Show the image (landscape)
             cv2.imshow('Pose Detection', image)
