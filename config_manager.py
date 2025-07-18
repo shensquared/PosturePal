@@ -143,23 +143,24 @@ def start_posture_detection():
     # Kill any existing processes
     subprocess.run(['pkill', '-f', 'pose_webcam.py'], capture_output=True)
     subprocess.run(['pkill', '-f', 'simple_posture_launcher.sh'], capture_output=True)
+    subprocess.run(['pkill', '-f', 'launch_posture_detection.sh'], capture_output=True)
     
-    # Start the launcher in background with proper output redirection
-    launcher_path = os.path.abspath('simple_posture_launcher.sh')
+    # Use the new launcher script with better dock icon hiding
+    launcher_path = os.path.abspath('launch_posture_detection.sh')
     log_file = os.path.abspath('simple_posture.log')
     
     # Use nohup to ensure the process continues even if parent exits
-    # Create the command as a string for shell execution with dock icon hidden
-    cmd = f"PYTHON_DISABLE_DOCK_ICON=1 nohup /bin/bash {launcher_path} > {log_file} 2>&1 &"
+    # The launcher script already sets the environment variables for dock hiding
+    cmd = f"nohup /bin/bash {launcher_path} > {log_file} 2>&1 &"
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Give it a moment to start
     import time
-    time.sleep(1)
+    time.sleep(2)
     
     # Check if it's running
     if is_posture_detection_running():
-        print("✅ Posture detection started")
+        print("✅ Posture detection started (dock icon hidden)")
     else:
         print("❌ Failed to start posture detection")
         return False
@@ -180,6 +181,7 @@ def stop_posture_detection():
     print("Stopping posture detection...")
     subprocess.run(['pkill', '-f', 'pose_webcam.py'], capture_output=True)
     subprocess.run(['pkill', '-f', 'simple_posture_launcher.sh'], capture_output=True)
+    subprocess.run(['pkill', '-f', 'launch_posture_detection.sh'], capture_output=True)
     print("✅ Posture detection stopped")
 
 def main():

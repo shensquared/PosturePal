@@ -916,12 +916,25 @@ if __name__ == "__main__":
     if sys.platform == 'darwin':
         try:
             import AppKit
-            # Hide dock icon
-            AppKit.NSApplication.sharedApplication()
-            AppKit.NSApp.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+            # Hide dock icon - multiple methods for better compatibility
+            app = AppKit.NSApplication.sharedApplication()
+            app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+            
+            # Additional method to ensure dock icon is hidden
+            try:
+                import Foundation
+                # Set LSUIElement to true in Info.plist equivalent
+                Foundation.NSBundle.mainBundle().infoDictionary()['LSUIElement'] = True
+            except:
+                pass
+                
         except ImportError:
-            # AppKit not available, use alternative method
-            pass
+            # AppKit not available, try alternative method
+            try:
+                # Set environment variable that some Python distributions recognize
+                os.environ['LSUIElement'] = '1'
+            except:
+                pass
     
     parser = argparse.ArgumentParser(description='Posture detection with calibration')
     parser.add_argument('--calibrate', action='store_true', help='Run in calibration mode')
