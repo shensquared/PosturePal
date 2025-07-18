@@ -97,6 +97,58 @@ def play_ding():
         except Exception as e2:
             print(f"Could not play ding sound: {e}, {e2}")
 
+def toggle_camera_window(window_should_be_visible, window_created):
+    """Toggle camera window visibility"""
+    try:
+        # Toggle the visibility flag
+        window_should_be_visible = not window_should_be_visible
+        
+        if window_should_be_visible:
+            # Create window if it doesn't exist
+            if not window_created:
+                cv2.namedWindow('Pose Detection', cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TOPMOST, 1)
+                cv2.resizeWindow('Pose Detection', 800, 600)
+                # Set window title with more descriptive name (if supported)
+                try:
+                    cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TITLE, 'SitStraight - Posture Detection')
+                except AttributeError:
+                    # WND_PROP_TITLE not available in this OpenCV version, skip it
+                    pass
+                window_created = True
+            
+            # Show window
+            cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 1)
+            if sys.platform == 'darwin':
+                cv2.moveWindow('Pose Detection', 100, 100)
+        else:
+            # Hide window
+            if window_created:
+                cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 0)
+                if sys.platform == 'darwin':
+                    cv2.moveWindow('Pose Detection', 3000, 3000)
+        
+        return window_should_be_visible, window_created
+    except Exception as e:
+        print(f"DEBUG: Error toggling window: {e}")
+        return window_should_be_visible, window_created
+
+def update_status_file(status_file, sitting_start_time, sitting_elapsed, window_visible=True):
+    """Update status file with current posture detection state"""
+    try:
+        status = {
+            "timestamp": time.time(),
+            "sitting_start_time": sitting_start_time,
+            "sitting_elapsed": sitting_elapsed,
+            "window_visible": window_visible,
+            "is_sitting": sitting_start_time is not None
+        }
+        
+        with open(status_file, 'w') as f:
+            json.dump(status, f)
+    except Exception as e:
+        print(f"Error updating status file: {e}")
+
 def safe_speak(engine, message, voice_busy, last_voice_time):
     """Safely speak a message, avoiding conflicts with other voice announcements"""
     current_time = time.time()
@@ -606,22 +658,16 @@ def run_normal_mode(cam_index):
     total_sitting_time = 0  # Track total actual sitting time
     last_pose_time = None  # Track when pose was last detected
     pose_detection_threshold = 3  # Seconds without pose detection to consider "not sitting"
+    
+    # Status file for communication with menu bar
+    status_file = "posture_status.json"
+    
+    # Window visibility control
+    window_should_be_visible = False
+    window_created = False
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        # Create window with proper close handling and enhanced visibility
-        cv2.namedWindow('Pose Detection', cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 1)
-        
-        # Make window always on top and set a reasonable size
-        cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TOPMOST, 1)
-        cv2.resizeWindow('Pose Detection', 800, 600)
-        
-        # Set window title with more descriptive name (if supported)
-        try:
-            cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_TITLE, 'SitStraight - Posture Detection')
-        except AttributeError:
-            # WND_PROP_TITLE not available in this OpenCV version, skip it
-            pass
+        # Don't create the window initially - create it only when needed
         
         # Additional macOS-specific dock hiding for OpenCV window
         if sys.platform == 'darwin':
@@ -810,6 +856,20 @@ def run_normal_mode(cam_index):
                     sitting_alerted = True
             else:
                 sitting_elapsed = 0  # Timer is paused
+            
+            # Check for window toggle request from menu bar
+            try:
+                if os.path.exists("toggle_window.txt"):
+                    window_should_be_visible, window_created = toggle_camera_window(window_should_be_visible, window_created)
+                    os.remove("toggle_window.txt")
+            except:
+                pass
+            
+            # Update status file for menu bar communication
+            try:
+                update_status_file(status_file, sitting_start_time, sitting_elapsed, window_should_be_visible)
+            except Exception as e:
+                print(f"DEBUG: Error updating status: {e}")
 
             # Draw posture metrics if pose is detected
             if results.pose_landmarks:
@@ -823,8 +883,12 @@ def run_normal_mode(cam_index):
             # cv2.putText(image, "Press 'q' to quit", (10, h - 20), 
             #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
-            # Show the image (landscape)
-            cv2.imshow('Pose Detection', image)
+            # Show the image (landscape) - only if window should be visible
+            if window_should_be_visible and window_created:
+                cv2.imshow('Pose Detection', image)
+            else:
+                # Still need to process events even when window is hidden
+                cv2.waitKey(1)
             
             # Check for quit key (q) or window close
             key = cv2.waitKey(1) & 0xFF
@@ -832,10 +896,8 @@ def run_normal_mode(cam_index):
                 print("Quit requested by user (keyboard)")
                 break
             
-            # Check if window was closed
-            if cv2.getWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE) < 1:
-                print("Window closed by user (red X button)")
-                break
+            # Note: Window visibility is controlled by the menu bar toggle system
+            # We don't check window visibility here to avoid quitting when window is minimized
             
 
 
