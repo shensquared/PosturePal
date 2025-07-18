@@ -86,7 +86,7 @@ def list_mac_cameras():
 
 # Helper to play a ding sound
 def play_ding():
-    """Play a system ding sound"""
+    """Play a system ding sound for posture alerts"""
     try:
         # macOS system sound
         os.system('afplay /System/Library/Sounds/Glass.aiff')
@@ -96,6 +96,32 @@ def play_ding():
             os.system('afplay /System/Library/Sounds/Ping.aiff')
         except Exception as e2:
             print(f"Could not play ding sound: {e}, {e2}")
+
+def play_stand_up_sound():
+    """Play Hero sound three times for stand up alerts"""
+    try:
+        # Play Hero sound three times with short pauses
+        for i in range(3):
+            os.system('afplay /System/Library/Sounds/Hero.aiff')
+            if i < 2:  # Don't sleep after the last one
+                time.sleep(0.3)  # Short pause between sounds
+    except Exception as e:
+        # Fallback: try different system sounds
+        try:
+            for i in range(3):
+                os.system('afplay /System/Library/Sounds/Basso.aiff')
+                if i < 2:
+                    time.sleep(0.3)
+        except Exception as e2:
+            try:
+                for i in range(3):
+                    os.system('afplay /System/Library/Sounds/Sosumi.aiff')
+                    if i < 2:
+                        time.sleep(0.3)
+            except Exception as e3:
+                print(f"Could not play stand up sound: {e}, {e2}, {e3}")
+                # Final fallback to regular ding
+                play_ding()
 
 def toggle_camera_window(window_should_be_visible, window_created):
     """Toggle camera window visibility"""
@@ -168,7 +194,7 @@ def update_status_file(status_file, sitting_start_time, sitting_elapsed, window_
     except Exception as e:
         print(f"Error updating status file: {e}")
 
-def safe_speak(engine, message, voice_busy, last_voice_time):
+def safe_speak(engine, message, voice_busy, last_voice_time, sound_type="posture"):
     """Safely speak a message, avoiding conflicts with other voice announcements"""
     current_time = time.time()
     
@@ -178,7 +204,11 @@ def safe_speak(engine, message, voice_busy, last_voice_time):
     
     try:
         voice_busy = True
-        play_ding()  # Play ding sound
+        # Play different sounds based on alert type
+        if sound_type == "stand_up":
+            play_stand_up_sound()  # Play stand up sound
+        else:
+            play_ding()  # Play regular ding sound for posture alerts
         engine.say(message)
         engine.runAndWait()
         time.sleep(0.5)  # Short pause to ensure audio plays
@@ -876,7 +906,7 @@ def run_normal_mode(cam_index):
                             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                     except:
                         pass
-                    voice_busy, last_voice_time = safe_speak(engine, "stand up", voice_busy, last_voice_time)
+                    voice_busy, last_voice_time = safe_speak(engine, "stand up", voice_busy, last_voice_time, "stand_up")
                     sitting_alerted = True
             else:
                 sitting_elapsed = 0  # Timer is paused
