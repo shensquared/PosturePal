@@ -15,17 +15,37 @@ A smart posture detection system that uses your webcam to monitor your sitting p
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Install Python 3.10 (Required)
+PosturePal requires Python 3.8-3.11 for MediaPipe compatibility. We recommend Python 3.10:
+
 ```bash
-# Create and activate virtual environment
-python3 -m venv .venv
+# Install Python 3.10 using Homebrew
+brew install python@3.10
+
+# Install tkinter for Python 3.10 (required for GUI)
+brew install python-tk@3.10
+```
+
+### 2. Install Dependencies
+```bash
+# Create and activate virtual environment with Python 3.10
+python3.10 -m venv .venv
 source .venv/bin/activate
 
 # Install required packages
 pip install -r requirements.txt
 ```
 
-### 2. Start the Menu Bar App
+**Quick Reference:**
+```bash
+# If you need to reinstall dependencies
+pip install --upgrade -r requirements.txt
+
+# If you need to check installed packages
+pip list | grep -E "(opencv|mediapipe|numpy|pyttsx3|rumps)"
+```
+
+### 3. Start the Menu Bar App
 ```bash
 ./start.sh
 ```
@@ -68,6 +88,11 @@ If the default camera (index 2) doesn't work:
 
 ## 🔧 Troubleshooting
 
+### Python Version Issues
+- **Error: "No module named '_tkinter'"**: Install tkinter for Python 3.10: `brew install python-tk@3.10`
+- **Error: "No matching distribution found for mediapipe"**: Ensure you're using Python 3.8-3.11 (recommend 3.10)
+- **Wrong Python version**: Use `python3.10 -m venv .venv` to create virtual environment with correct Python version
+
 ### Voice Alerts Not Playing
 - Check your system volume
 - Ensure microphone permissions are granted
@@ -82,6 +107,7 @@ If the default camera (index 2) doesn't work:
 - Check if the script has execute permissions: `chmod +x start.sh`
 - Look for error messages in `menu_bar.log`
 - Try running manually: `python3 menu_bar_controller.py`
+- Ensure you're using Python 3.10 in your virtual environment
 
 ### Posture Detection Issues
 - Run calibration again to reset your good posture position
@@ -161,12 +187,49 @@ The system uses a virtual environment (`.venv/`) to manage dependencies. Always 
 source .venv/bin/activate
 ```
 
+**Note**: Make sure your virtual environment is created with Python 3.10:
+```bash
+python3.10 -m venv .venv
+```
+
+### Dependency Management
+- **Automatic Installation**: All Python dependencies are installed via `pip install -r requirements.txt`
+- **Version Pinning**: Dependencies use minimum version requirements for compatibility
+- **System Dependencies**: Some dependencies (like tkinter) require system-level installation via Homebrew
+- **MediaPipe Compatibility**: MediaPipe has strict Python version requirements (3.8-3.11)
+
+### Common Dependency Issues
+- **MediaPipe Installation Fails**: Ensure Python version is 3.8-3.11
+- **Tkinter Missing**: Install via `brew install python-tk@3.10`
+- **Permission Issues**: Ensure you have write access to the project directory
+- **Conflicting Packages**: Use virtual environment to avoid conflicts with system Python
+
 ## 📋 Requirements
 
+### System Requirements
 - macOS 10.14 or later
-- Python 3.8+
+- Python 3.8-3.11 (Python 3.10 recommended for best compatibility)
+- Homebrew (for installing Python 3.10 and tkinter)
 - Webcam
 - Microphone (for voice alerts)
+
+### Python Dependencies
+The following packages are automatically installed via `requirements.txt`:
+
+**Core Dependencies:**
+- `opencv-python>=4.8.0` - Computer vision and webcam access
+- `mediapipe>=0.10.0` - Pose detection and body tracking
+- `numpy>=1.24.0` - Numerical computing
+- `pyttsx3>=2.90` - Text-to-speech for voice alerts
+
+**macOS Integration:**
+- `rumps>=0.4.0` - macOS menu bar integration
+- `pyobjc-framework-Cocoa>=9.0` - macOS native framework access
+
+**Additional Dependencies (auto-installed):**
+- `tkinter` - GUI framework (installed via Homebrew)
+- Various MediaPipe dependencies (JAX, matplotlib, etc.)
+- PyObjC frameworks for macOS integration
 
 ## 🤝 Contributing
 
