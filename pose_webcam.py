@@ -1,6 +1,6 @@
 import cv2
 import mediapipe as mp
-import pyttsx3
+# import pyttsx3  # Removed for performance - using macOS say command instead
 import numpy as np
 import time
 import subprocess
@@ -194,24 +194,76 @@ def update_status_file(status_file, sitting_start_time, sitting_elapsed, window_
     except Exception as e:
         print(f"Error updating status file: {e}")
 
-def safe_speak(engine, message, voice_busy, last_voice_time, sound_type="posture"):
-    """Safely speak a message, avoiding conflicts with other voice announcements"""
+def safe_speak(message, voice_busy, last_voice_time, sound_type="posture"):
+    """Safely speak a message using efficient macOS say command"""
     current_time = time.time()
     
     # If voice is busy or too soon after last announcement, skip this one
     if voice_busy or (current_time - last_voice_time) < 2.0:
+        debug_msg = f"DEBUG: Voice alert skipped - busy: {voice_busy}, time since last: {current_time - last_voice_time:.1f}s, message: '{message}'"
+        print(debug_msg)
+        try:
+            with open('simple_posture.log', 'a') as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+        except:
+            pass
         return voice_busy, last_voice_time
     
     try:
         voice_busy = True
+        debug_msg = f"DEBUG: Playing voice alert - type: {sound_type}, message: '{message}'"
+        print(debug_msg)
+        try:
+            with open('simple_posture.log', 'a') as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+        except:
+            pass
+        
         # Play different sounds based on alert type
         if sound_type == "stand_up":
             play_stand_up_sound()  # Play stand up sound
         else:
             play_ding()  # Play regular ding sound for posture alerts
-        engine.say(message)
-        engine.runAndWait()
-        time.sleep(0.5)  # Short pause to ensure audio plays
+        
+        # Use efficient macOS say command (much faster and more reliable than pyttsx3)
+        try:
+            import subprocess
+            # Use macOS say command with optimized settings
+            subprocess.run(['say', '-v', 'Alex', '-r', '150', message], 
+                         timeout=3, capture_output=True, check=True)
+            debug_msg = f"DEBUG: Successfully used system 'say' command for: '{message}'"
+            print(debug_msg)
+            try:
+                with open('simple_posture.log', 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+            except:
+                pass
+        except subprocess.TimeoutExpired:
+            debug_msg = f"DEBUG: System say command timed out for: '{message}'"
+            print(debug_msg)
+            try:
+                with open('simple_posture.log', 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+            except:
+                pass
+        except subprocess.CalledProcessError as e:
+            debug_msg = f"DEBUG: System say command failed: {e}"
+            print(debug_msg)
+            try:
+                with open('simple_posture.log', 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+            except:
+                pass
+        except Exception as e:
+            debug_msg = f"DEBUG: System say command error: {e}"
+            print(debug_msg)
+            try:
+                with open('simple_posture.log', 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
+            except:
+                pass
+        
+        time.sleep(0.2)  # Reduced pause for better performance
         last_voice_time = current_time
         voice_busy = False
         return voice_busy, last_voice_time
@@ -632,12 +684,10 @@ def run_normal_mode(cam_index):
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
 
-    # Initialize voice engine
-    engine = pyttsx3.init()
-    
-    # Set volume and rate for better audio
-    engine.setProperty('volume', 1.0)  # Maximum volume (0.0 to 1.0)
-    engine.setProperty('rate', 150)     # Slightly slower for clarity
+    # Voice engine is no longer needed - using efficient macOS say command
+    # engine = pyttsx3.init()  # Removed for performance
+    # engine.setProperty('volume', 1.0)  # Removed for performance
+    # engine.setProperty('rate', 150)     # Removed for performance
     
     # Voice queue to prevent conflicts
     voice_busy = False
@@ -856,7 +906,7 @@ def run_normal_mode(cam_index):
                                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                         except:
                             pass
-                        voice_busy, last_voice_time = safe_speak(engine, "Please sit up straight!", voice_busy, last_voice_time)
+                        voice_busy, last_voice_time = safe_speak("Please sit up straight!", voice_busy, last_voice_time)
                         last_announcement_time = current_time
                     
                     # Continuous announcements every ANNOUNCEMENT_INTERVAL seconds (only after initial alert)
@@ -868,7 +918,7 @@ def run_normal_mode(cam_index):
                                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                         except:
                             pass
-                        voice_busy, last_voice_time = safe_speak(engine, "Please sit up straight!", voice_busy, last_voice_time)
+                        voice_busy, last_voice_time = safe_speak("Please sit up straight!", voice_busy, last_voice_time)
                         last_announcement_time = current_time
                     
                     # Note: "stand up" announcement moved to sitting timer section
@@ -906,7 +956,7 @@ def run_normal_mode(cam_index):
                             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {debug_msg}\n")
                     except:
                         pass
-                    voice_busy, last_voice_time = safe_speak(engine, "stand up", voice_busy, last_voice_time, "stand_up")
+                    voice_busy, last_voice_time = safe_speak("stand up", voice_busy, last_voice_time, "stand_up")
                     sitting_alerted = True
             else:
                 sitting_elapsed = 0  # Timer is paused

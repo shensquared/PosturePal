@@ -10,7 +10,7 @@
 opencv-python>=4.8.0
 mediapipe>=0.10.0
 numpy>=1.24.0
-pyttsx3>=2.90
+# pyttsx3>=2.90  # Removed - using macOS say command for better performance
 
 # Menu bar integration (optional)
 rumps>=0.4.0
