@@ -115,12 +115,31 @@ def toggle_camera_window(window_should_be_visible, window_created):
                 except AttributeError:
                     # WND_PROP_TITLE not available in this OpenCV version, skip it
                     pass
+                
+                # Additional macOS-specific dock hiding when window is created
+                if sys.platform == 'darwin':
+                    try:
+                        import AppKit
+                        # Re-hide dock icon after window creation
+                        app = AppKit.NSApplication.sharedApplication()
+                        app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+                    except ImportError:
+                        pass
+                
                 window_created = True
             
             # Show window
             cv2.setWindowProperty('Pose Detection', cv2.WND_PROP_VISIBLE, 1)
             if sys.platform == 'darwin':
                 cv2.moveWindow('Pose Detection', 100, 100)
+                
+                # Additional dock hiding after showing window
+                try:
+                    import AppKit
+                    app = AppKit.NSApplication.sharedApplication()
+                    app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+                except ImportError:
+                    pass
         else:
             # Hide window
             if window_created:
@@ -665,6 +684,9 @@ def run_normal_mode(cam_index):
     # Window visibility control
     window_should_be_visible = False
     window_created = False
+    
+    # Frame counter for periodic tasks
+    frame_count = 0
 
     with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
         # Don't create the window initially - create it only when needed
@@ -684,6 +706,8 @@ def run_normal_mode(cam_index):
             ret, frame = cap.read()
             if not ret:
                 break
+            
+            frame_count += 1
 
             # Check user activity if monitor detection is enabled
             if config['monitor_detection_enabled']:
@@ -870,6 +894,15 @@ def run_normal_mode(cam_index):
                 update_status_file(status_file, sitting_start_time, sitting_elapsed, window_should_be_visible)
             except Exception as e:
                 print(f"DEBUG: Error updating status: {e}")
+            
+            # Periodic dock icon hiding check (every 30 frames, roughly every second)
+            if frame_count % 30 == 0 and sys.platform == 'darwin':
+                try:
+                    import AppKit
+                    app = AppKit.NSApplication.sharedApplication()
+                    app.setActivationPolicy_(AppKit.NSApplicationActivationPolicyAccessory)
+                except ImportError:
+                    pass
 
             # Draw posture metrics if pose is detected
             if results.pose_landmarks:
