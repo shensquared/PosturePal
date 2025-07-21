@@ -991,10 +991,10 @@ def run_normal_mode(cam_index):
             # Draw sitting timer display
             draw_sitting_timer(image, sitting_elapsed, sitting_alerted)
 
-            # Remove the 'Press q to quit' instruction
-            # h, w = image.shape[:2]
-            # cv2.putText(image, "Press 'q' to quit", (10, h - 20), 
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # Add keyboard controls info
+            h, w = image.shape[:2]
+            cv2.putText(image, "Press 'q' to quit, 'h' to hide/show", (10, h - 20), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
             
             # Show the image (landscape) - only if window should be visible
             if window_should_be_visible and window_created:
@@ -1008,8 +1008,12 @@ def run_normal_mode(cam_index):
             if key == ord('q'):
                 print("Quit requested by user (keyboard)")
                 break
+            elif key == ord('h'):
+                # Toggle window visibility with 'h' key
+                window_should_be_visible, window_created = toggle_camera_window(window_should_be_visible, window_created)
+                print(f"Window visibility toggled: {'Visible' if window_should_be_visible else 'Hidden'}")
             
-            # Note: Window visibility is controlled by the menu bar toggle system
+            # Note: Window visibility is controlled by the menu bar toggle system and 'h' key
             # We don't check window visibility here to avoid quitting when window is minimized
             
 
