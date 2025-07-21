@@ -15,7 +15,6 @@ CONFIG_FILE = "config.json"
 DEFAULT_CONFIG = {
     "auto_start_enabled": False,
     "monitor_detection_enabled": False,
-    "alert_duration_seconds": 5.0,
     "camera_index": 0,
     "sitting_duration_threshold": 1800,
     "bad_posture_duration_threshold": 60,
@@ -675,10 +674,10 @@ def run_normal_mode(cam_index):
     
     print(f"Using camera index {cam_index}")
     print(f"Configuration loaded:")
-    print(f"  Alert duration: {config['alert_duration_seconds']} seconds")
     print(f"  Monitor detection: {'Enabled' if config['monitor_detection_enabled'] else 'Disabled'}")
     print(f"  Sitting threshold: {config['sitting_duration_threshold']} seconds")
     print(f"  Bad posture threshold: {config['bad_posture_duration_threshold']} seconds")
+    print(f"  Announcement interval: {config['announcement_interval']} seconds")
 
     # Initialize MediaPipe pose and drawing utilities
     mp_pose = mp.solutions.pose
@@ -737,10 +736,6 @@ def run_normal_mode(cam_index):
         fps = 30 / (end_time - start_time) if (end_time - start_time) > 0 else 30
     
     print(f"Camera frame rate: {fps:.1f} FPS")
-    
-    # Calculate alert threshold based on frame rate and configuration
-    alert_threshold = max(1, int(fps * config['alert_duration_seconds']))
-    print(f"Alert threshold set to {alert_threshold} frames ({alert_threshold/fps:.1f} seconds)")
 
     # Alert logic
     bad_posture_frames = 0

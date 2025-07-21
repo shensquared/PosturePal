@@ -117,19 +117,12 @@ def main():
             settings_frame = ttk.LabelFrame(parent, text="Settings", padding="10")
             settings_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 20))  # More space below
             
-            # Alert duration
-            ttk.Label(settings_frame, text="Alert duration (seconds):").grid(row=0, column=0, sticky=tk.W, pady=2)
-            self.alert_duration_var = tk.DoubleVar(value=self.config.get('alert_duration_seconds', 5.0))
-            alert_duration_spin = ttk.Spinbox(settings_frame, from_=1.0, to=30.0, increment=0.5, 
-                                             textvariable=self.alert_duration_var, width=10)
-            alert_duration_spin.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=2)
-            
             # Camera index
-            ttk.Label(settings_frame, text="Camera index:").grid(row=1, column=0, sticky=tk.W, pady=2)
+            ttk.Label(settings_frame, text="Camera index:").grid(row=0, column=0, sticky=tk.W, pady=2)
             self.camera_var = tk.IntVar(value=self.config.get('camera_index', 0))
             camera_spin = ttk.Spinbox(settings_frame, from_=0, to=10, increment=1, 
                                      textvariable=self.camera_var, width=10)
-            camera_spin.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=2)
+            camera_spin.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=2)
             
             # Sitting duration
             ttk.Label(settings_frame, text="Sitting duration (minutes):").grid(row=2, column=0, sticky=tk.W, pady=2)
@@ -272,7 +265,6 @@ def main():
         
         def save_settings(self):
             """Save all settings"""
-            self.config['alert_duration_seconds'] = self.alert_duration_var.get()
             self.config['camera_index'] = self.camera_var.get()
             self.config['sitting_duration_threshold'] = self.sitting_duration_var.get() * 60
             self.config['bad_posture_duration_threshold'] = self.bad_posture_duration_var.get()

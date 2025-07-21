@@ -13,7 +13,6 @@ CONFIG_FILE = "config.json"
 DEFAULT_CONFIG = {
     "auto_start_enabled": False,
     "monitor_detection_enabled": False,
-    "alert_duration_seconds": 5.0,
     "camera_index": 0,
     "sitting_duration_threshold": 1200,
     "bad_posture_duration_threshold": 60,
@@ -51,7 +50,6 @@ def show_config(config):
     print("\n=== PosturePal Configuration ===")
     print(f"Auto-start on login: {'✅ Enabled' if config['auto_start_enabled'] else '❌ Disabled'}")
     print(f"Monitor detection: {'✅ Enabled' if config['monitor_detection_enabled'] else '❌ Disabled'}")
-    print(f"Alert duration: {config['alert_duration_seconds']} seconds")
     print(f"Camera index: {config['camera_index']}")
     print(f"Sitting threshold: {config['sitting_duration_threshold']} seconds ({config['sitting_duration_threshold']//60} minutes)")
     print(f"Bad posture threshold: {config['bad_posture_duration_threshold']} seconds")
@@ -191,7 +189,6 @@ def main():
     parser.add_argument('--toggle-monitor', action='store_true', help='Toggle monitor detection')
     parser.add_argument('--start', action='store_true', help='Start posture detection manually')
     parser.add_argument('--stop', action='store_true', help='Stop posture detection')
-    parser.add_argument('--alert-duration', type=float, help='Set alert duration in seconds')
     parser.add_argument('--camera', type=int, help='Set camera index')
     
     args = parser.parse_args()
@@ -216,11 +213,6 @@ def main():
     
     if args.stop:
         stop_posture_detection()
-    
-    if args.alert_duration is not None:
-        config['alert_duration_seconds'] = args.alert_duration
-        save_config(config)
-        print(f"Alert duration set to {args.alert_duration} seconds")
     
     if args.camera is not None:
         config['camera_index'] = args.camera
