@@ -940,10 +940,13 @@ def run_normal_mode(cam_index):
                     except:
                         pass
 
-            # Check sitting timer (only when actually sitting)
+            # Check sitting timer (only when actually sitting and pose is detected)
             if sitting_start_time is not None:
                 sitting_elapsed = time.time() - sitting_start_time
-                if sitting_elapsed >= SITTING_DURATION_THRESHOLD and not sitting_alerted:
+                # Only trigger stand up alert if pose is currently detected (person is actually sitting)
+                if (sitting_elapsed >= SITTING_DURATION_THRESHOLD and 
+                    not sitting_alerted and 
+                    results.pose_landmarks is not None):
                     debug_msg = f"DEBUG: Stand up alert triggered after {sitting_elapsed:.1f} seconds (threshold: {SITTING_DURATION_THRESHOLD})"
                     print(debug_msg)
                     try:
