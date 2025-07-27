@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="logo.png" alt="PosturePal Logo" width="500">
+</div>
+
 # PosturePal - macOS Posture Detection
 
 A smart posture detection application for macOS that uses your webcam to monitor your sitting posture and provides gentle reminders to maintain good posture.
