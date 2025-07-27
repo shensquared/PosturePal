@@ -2,72 +2,93 @@
   "good_examples": [
     {
       "measurements": {
-        "head_height": 0.2598986029624939,
-        "nose_height_in_frame": 0.5741149187088013
+        "head_height": 0.27778127789497375,
+        "nose_height_in_frame": 0.5774150490760803
       },
-      "timestamp": 1752638696.905807
+      "timestamp": 1753480079.0016499
     },
     {
       "measurements": {
-        "head_height": 0.22342082858085632,
-        "nose_height_in_frame": 0.5941780209541321
+        "head_height": 0.2699192762374878,
+        "nose_height_in_frame": 0.5878801941871643
       },
-      "timestamp": 1752638698.4869928
+      "timestamp": 1753480083.254903
     },
     {
       "measurements": {
-        "head_height": 0.24099570512771606,
-        "nose_height_in_frame": 0.5789182186126709
+        "head_height": 0.28136375546455383,
+        "nose_height_in_frame": 0.5749692320823669
       },
-      "timestamp": 1752638700.664385
+      "timestamp": 1753480091.867281
     },
     {
       "measurements": {
-        "head_height": 0.19927793741226196,
-        "nose_height_in_frame": 0.6244466304779053
+        "head_height": 0.26445886492729187,
+        "nose_height_in_frame": 0.5628833770751953
       },
-      "timestamp": 1752638805.106522
+      "timestamp": 1753481931.198411
     },
     {
       "measurements": {
-        "head_height": 0.22862520813941956,
-        "nose_height_in_frame": 0.5925573110580444
+        "head_height": 0.28001099824905396,
+        "nose_height_in_frame": 0.5365732312202454
       },
-      "timestamp": 1752638810.285941
+      "timestamp": 1753481935.089256
+    },
+    {
+      "measurements": {
+        "head_height": 0.2581402063369751,
+        "nose_height_in_frame": 0.6058950424194336
+      },
+      "timestamp": 1753559666.78736
+    },
+    {
+      "measurements": {
+        "head_height": 0.28410282731056213,
+        "nose_height_in_frame": 0.5745789408683777
+      },
+      "timestamp": 1753559668.5966551
+    },
+    {
+      "measurements": {
+        "head_height": 0.27352118492126465,
+        "nose_height_in_frame": 0.5864371657371521
+      },
+      "timestamp": 1753559669.983598
     }
   ],
   "bad_examples": [
     {
       "measurements": {
-        "head_height": 0.18733859062194824,
-        "nose_height_in_frame": 0.649624764919281
+        "head_height": 0.24164292216300964,
+        "nose_height_in_frame": 0.6293392777442932
       },
-      "timestamp": 1752638703.73388
+      "timestamp": 1753480095.8953128
     },
     {
       "measurements": {
-        "head_height": 0.19147247076034546,
-        "nose_height_in_frame": 0.6464130282402039
+        "head_height": 0.25961771607398987,
+        "nose_height_in_frame": 0.6081231236457825
       },
-      "timestamp": 1752638708.915124
+      "timestamp": 1753480098.501626
     },
     {
       "measurements": {
-        "head_height": 0.2013821303844452,
-        "nose_height_in_frame": 0.6213520765304565
+        "head_height": 0.2568073272705078,
+        "nose_height_in_frame": 0.6049325466156006
       },
-      "timestamp": 1752638711.3238988
+      "timestamp": 1753480108.3679879
     },
     {
       "measurements": {
-        "head_height": 0.20055100321769714,
-        "nose_height_in_frame": 0.6314470767974854
+        "head_height": 0.2553895115852356,
+        "nose_height_in_frame": 0.5897670388221741
       },
-      "timestamp": 1752638817.084909
+      "timestamp": 1753481940.3031318
     }
   ],
   "thresholds": {
-    "head_height_threshold": 0.21281485259532928,
-    "nose_height_threshold": 0.6150261282920837
+    "head_height_threshold": 0.26351333409547806,
+    "nose_height_threshold": 0.5919347628951073
   }
 }

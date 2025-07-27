@@ -2,7 +2,7 @@
   "auto_start_enabled": true,
   "monitor_detection_enabled": true,
   "alert_duration_seconds": 4.0,
-  "camera_index": 1,
+  "camera_index": 0,
   "sitting_duration_threshold": 1200,
   "bad_posture_duration_threshold": 10,
   "announcement_interval": 5
